@@ -1,0 +1,348 @@
+@using DatPhongKhachSan.Constants
+@using Microsoft.AspNetCore.Authorization
+@inject Microsoft.AspNetCore.Authorization.IAuthorizationService AuthSvc
+@{
+    var ctrl = ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
+    bool A(string c) => ctrl.Equals(c, StringComparison.OrdinalIgnoreCase);
+
+    bool canXepCa    = (await AuthSvc.AuthorizeAsync(User, ChucNang.XepCa)).Succeeded;
+    bool canChamCong = (await AuthSvc.AuthorizeAsync(User, ChucNang.ChamCong)).Succeeded;
+    bool canDon      = (await AuthSvc.AuthorizeAsync(User, ChucNang.QuanLyDon)).Succeeded;
+    bool canNguoiDung= (await AuthSvc.AuthorizeAsync(User, ChucNang.QuanLyNguoiDung)).Succeeded;
+    bool canGanQuyen = (await AuthSvc.AuthorizeAsync(User, ChucNang.GanQuyen)).Succeeded;
+    bool canBaoCao   = (await AuthSvc.AuthorizeAsync(User, ChucNang.XemBaoCao)).Succeeded;
+    bool canDanhMuc  = (await AuthSvc.AuthorizeAsync(User, ChucNang.QuanLyDanhMuc)).Succeeded;
+    bool canChatbot     = (await AuthSvc.AuthorizeAsync(User, ChucNang.QuanLyChatbot)).Succeeded;
+    bool canTraCuu      = (await AuthSvc.AuthorizeAsync(User, ChucNang.TraCuuDon)).Succeeded;
+    bool canCheckInOut  = (await AuthSvc.AuthorizeAsync(User, ChucNang.CheckInOut)).Succeeded;
+    bool canDatWalkIn   = (await AuthSvc.AuthorizeAsync(User, ChucNang.DatWalkIn)).Succeeded;
+    bool canChuyenGiaHan= (await AuthSvc.AuthorizeAsync(User, ChucNang.ChuyenGiaHan)).Succeeded;
+    bool canBuongPhong  = (await AuthSvc.AuthorizeAsync(User, ChucNang.BuongPhong)).Succeeded;
+    bool isAdmin        = User.IsInRole("Admin");
+}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - StarStay Admin</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" />
+    <style>
+        :root {
+            --sb-w: 260px;
+            --sb-bg: #0f172a;
+            --sb-bg2: #1e293b;
+            --sb-text: #94a3b8;
+            --sb-active: #6366f1;
+            --sb-active-bg: rgba(99,102,241,.18);
+            --sb-hover-bg: rgba(99,102,241,.10);
+        }
+        body { background:#f1f5f9; font-size:.9rem; }
+
+        /* ── Sidebar ─────────────────────────────────── */
+        #adminSidebar {
+            --bs-offcanvas-width: var(--sb-w);
+            background: linear-gradient(180deg, var(--sb-bg) 0%, #161d30 100%);
+            color: var(--sb-text);
+            display: flex; flex-direction: column;
+            overflow-y: auto; overflow-x: hidden;
+            border-right: 1px solid rgba(99,102,241,.15);
+        }
+        .sb-header {
+            padding: 14px 16px;
+            border-bottom: 1px solid rgba(255,255,255,.06);
+            flex-shrink: 0; display: flex; align-items: center; gap: 8px;
+            background: rgba(99,102,241,.08);
+        }
+        .sb-brand {
+            font-weight: 700; font-size: .9rem; color: #e0e7ff;
+            text-decoration: none; flex: 1;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .sb-brand-icon {
+            width: 32px; height: 32px; border-radius: 8px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: #fff; flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center; font-size: 14px;
+            box-shadow: 0 2px 8px rgba(99,102,241,.4);
+        }
+        .sb-nav { flex: 1; padding: 6px 0 8px; }
+        .sb-group {
+            font-size: .62rem; font-weight: 700; letter-spacing: .10em;
+            text-transform: uppercase; color: #334155;
+            padding: 14px 16px 4px;
+        }
+        .sb-link {
+            display: flex; align-items: center; gap: 10px;
+            padding: 8px 16px; color: var(--sb-text);
+            text-decoration: none; font-size: .845rem;
+            border-left: 3px solid transparent;
+            transition: background .15s, color .15s, border-color .15s;
+            background: transparent; border-top: 0; border-right: 0; border-bottom: 0;
+            width: 100%; cursor: pointer;
+        }
+        .sb-link:hover { background: var(--sb-hover-bg); color: #c7d2fe; border-left-color: rgba(99,102,241,.4); }
+        .sb-link.active { background: var(--sb-active-bg); color: #a5b4fc; border-left-color: var(--sb-active); font-weight: 600; }
+        .sb-link i { width: 16px; text-align: center; font-size: .8rem; opacity: .85; }
+        .sb-link.active i, .sb-link:hover i { opacity: 1; }
+        .sb-footer { padding: 4px 0 6px; border-top: 1px solid rgba(255,255,255,.06); flex-shrink: 0; }
+
+        /* ── Topbar (mobile) ─────────────────────────── */
+        #adminTopbar {
+            background: var(--sb-bg); color: #fff;
+            display: flex; align-items: center; padding: 0 14px; gap: 10px;
+            height: 50px; flex-shrink: 0;
+            position: sticky; top: 0; z-index: 1030;
+            border-bottom: 1px solid rgba(99,102,241,.2);
+        }
+
+        /* ── Content ─────────────────────────────────── */
+        #adminContent { min-height: 100vh; min-width: 0; display: flex; flex-direction: column; }
+        #adminBody { flex: 1; padding: 0; }
+
+        /* ── Desktop ─────────────────────────────────── */
+        @@media (min-width: 992px) {
+            #adminTopbar { display: none !important; }
+            #adminSidebar {
+                /* Bootstrap .offcanvas mặc định visibility:hidden + translateX(-100%).
+                   Override để sidebar hiện inline trên desktop. */
+                position: sticky !important;
+                top: 0;
+                height: 100vh;
+                width: var(--sb-w) !important;
+                min-width: var(--sb-w);
+                visibility: visible !important;
+                transform: none !important;
+                z-index: 1 !important;
+            }
+        }
+
+        /* ── DataTables ──────────────────────────────── */
+        .dataTables_wrapper { overflow-x: auto; min-width: 0; }
+        .dataTables_wrapper .row { min-width: 0; }
+
+        /* ── Mobile responsive tweaks ────────────────── */
+        @@media (max-width: 767.98px) {
+            #adminBody .container-fluid { padding-left: .75rem; padding-right: .75rem; }
+            /* DataTables controls full-width trên mobile */
+            .dataTables_length,
+            .dataTables_filter { float: none !important; width: 100%; margin-bottom: .4rem; }
+            .dataTables_filter input { width: 100% !important; box-sizing: border-box; }
+            .dataTables_info { clear: both; padding-top: .25rem; font-size: .78rem; }
+            .dataTables_paginate { text-align: center; margin-top: .4rem; float: none !important; }
+            .dataTables_paginate .paginate_button { padding: .2rem .5rem !important; font-size: .8rem; }
+        }
+        @@media (max-width: 575.98px) {
+            #adminBody .container-fluid { padding-left: .5rem; padding-right: .5rem; }
+        }
+
+        /* ── Dashboard-only helpers ──────────────────── */
+        .stat-card {
+            background: #fff; border-radius: 10px; padding: 16px 18px;
+            box-shadow: 0 1px 3px rgba(0,0,0,.07);
+            display: flex; align-items: center; gap: 14px;
+        }
+        .stat-icon {
+            width: 44px; height: 44px; border-radius: 10px; flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center; font-size: 18px;
+        }
+        .stat-val { font-size: 1.5rem; font-weight: 700; line-height: 1.1; }
+        .stat-lbl { font-size: .73rem; color: #64748b; margin-top: 2px; }
+        .admin-card { background: #fff; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,.07); }
+    </style>
+    @await RenderSectionAsync("Styles", required: false)
+</head>
+<body>
+<div class="d-flex" id="adminWrapper">
+
+    <!-- ══ Sidebar ════════════════════════════════════════════════════════════ -->
+    <nav class="offcanvas offcanvas-start offcanvas-lg"
+         id="adminSidebar" tabindex="-1" aria-label="Menu quản trị">
+
+        <div class="sb-header">
+            <a class="sb-brand" asp-area="Admin" asp-controller="Home" asp-action="Index">
+                <div class="sb-brand-icon"><i class="fas fa-hotel"></i></div>
+                StarStay Admin
+            </a>
+            <button class="btn-close btn-close-white d-lg-none" style="opacity:.55;scale:.85"
+                    data-bs-dismiss="offcanvas" data-bs-target="#adminSidebar" aria-label="Đóng"></button>
+        </div>
+
+        <div class="sb-nav">
+            <!-- Dashboard -->
+            <a asp-area="Admin" asp-controller="Home" asp-action="Index"
+               class="sb-link @(A("Home") ? "active" : "")">
+                <i class="fas fa-gauge-high"></i> Dashboard
+            </a>
+
+            <!-- Lễ tân -->
+            @if (canTraCuu || canCheckInOut || canDatWalkIn || canChuyenGiaHan || isAdmin)
+            {
+                <div class="sb-group">Lễ tân</div>
+                <a href="/LeTan/TraCuuDon" class="sb-link @(A("LeTan") ? "active" : "")">
+                    <i class="fas fa-concierge-bell"></i> Tra cứu đơn
+                </a>
+            }
+
+            <!-- Buồng phòng -->
+            @if (canBuongPhong || isAdmin)
+            {
+                <div class="sb-group">Buồng phòng</div>
+                <a href="/BuongPhong" class="sb-link @(A("BuongPhong") ? "active" : "")">
+                    <i class="fas fa-broom"></i> Giao việc dọn phòng
+                </a>
+            }
+
+            <!-- Nhân sự -->
+            @if (canXepCa || canChamCong)
+            {
+                <div class="sb-group">Nhân sự</div>
+                @if (canXepCa)
+                {
+                    <a asp-area="Admin" asp-controller="PhanCa" asp-action="Index"
+                       class="sb-link @(A("PhanCa") ? "active" : "")">
+                        <i class="fas fa-calendar-alt"></i> Xếp ca
+                    </a>
+                }
+                @if (canChamCong)
+                {
+                    <a asp-area="Admin" asp-controller="ChamCong" asp-action="Index"
+                       class="sb-link @(A("ChamCong") ? "active" : "")">
+                        <i class="fas fa-user-clock"></i> Chấm công
+                    </a>
+                }
+            }
+
+            <!-- Quản lý -->
+            @if (canDon || canNguoiDung || canGanQuyen || isAdmin)
+            {
+                <div class="sb-group">Quản lý</div>
+                @if (canDon || isAdmin)
+                {
+                    <a asp-area="Admin" asp-controller="DonDatPhong" asp-action="Index"
+                       class="sb-link @(A("DonDatPhong") ? "active" : "")">
+                        <i class="fas fa-file-invoice"></i> Đơn đặt phòng
+                    </a>
+                }
+                @if (canNguoiDung || isAdmin)
+                {
+                    <a asp-area="Admin" asp-controller="NguoiDung" asp-action="Index"
+                       class="sb-link @(A("NguoiDung") ? "active" : "")">
+                        <i class="fas fa-users"></i> Người dùng
+                    </a>
+                }
+                @if (canGanQuyen || isAdmin)
+                {
+                    <a asp-area="Admin" asp-controller="PhanQuyen" asp-action="Index"
+                       class="sb-link @(A("PhanQuyen") ? "active" : "")">
+                        <i class="fas fa-shield-halved"></i> Gán quyền
+                    </a>
+                }
+            }
+
+            <!-- Báo cáo -->
+            @if (canBaoCao || isAdmin)
+            {
+                <div class="sb-group">Báo cáo</div>
+                <a asp-area="Admin" asp-controller="BaoCao" asp-action="Index"
+                   class="sb-link @(A("BaoCao") ? "active" : "")">
+                    <i class="fas fa-chart-bar"></i> Doanh thu
+                </a>
+            }
+
+            <!-- Danh mục -->
+            @if (canDanhMuc || isAdmin)
+            {
+                <div class="sb-group">Danh mục</div>
+                <a asp-area="Admin" asp-controller="LoaiPhong" asp-action="Index"
+                   class="sb-link @(A("LoaiPhong") ? "active" : "")">
+                    <i class="fas fa-bed"></i> Loại phòng
+                </a>
+                <a asp-area="Admin" asp-controller="Phong" asp-action="Index"
+                   class="sb-link @(A("Phong") ? "active" : "")">
+                    <i class="fas fa-door-open"></i> Phòng
+                </a>
+                <a asp-area="Admin" asp-controller="TienNghi" asp-action="Index"
+                   class="sb-link @(A("TienNghi") ? "active" : "")">
+                    <i class="fas fa-star"></i> Tiện nghi
+                </a>
+                <a asp-area="Admin" asp-controller="DichVu" asp-action="Index"
+                   class="sb-link @(A("DichVu") ? "active" : "")">
+                    <i class="fas fa-concierge-bell"></i> Dịch vụ
+                </a>
+            }
+
+            <!-- Chatbot -->
+            @if (canChatbot || isAdmin)
+            {
+                <div class="sb-group">Chatbot</div>
+                <a asp-area="Admin" asp-controller="Chatbot" asp-action="Index"
+                   class="sb-link @(A("Chatbot") ? "active" : "")">
+                    <i class="fas fa-robot"></i> Quản lý FAQ
+                </a>
+            }
+        </div>
+
+        <div class="sb-footer">
+            <a href="/" class="sb-link">
+                <i class="fas fa-globe"></i> Trang khách
+            </a>
+            <form method="post" asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="/">
+                <button type="submit" class="sb-link text-start">
+                    <i class="fas fa-right-from-bracket"></i> Đăng xuất
+                </button>
+            </form>
+        </div>
+    </nav>
+
+    <!-- ══ Vùng nội dung ══════════════════════════════════════════════════════ -->
+    <div id="adminContent" class="flex-grow-1">
+
+        <!-- Topbar chỉ hiển thị trên mobile -->
+        <header id="adminTopbar">
+            <button class="btn btn-sm text-white border-0 p-1 me-1"
+                    data-bs-toggle="offcanvas" data-bs-target="#adminSidebar"
+                    aria-label="Mở menu">
+                <i class="fas fa-bars fa-lg"></i>
+            </button>
+            <span class="fw-semibold flex-grow-1" style="font-size:.88rem">StarStay Admin</span>
+            <span style="font-size:.76rem;opacity:.65">
+                <i class="fas fa-user me-1"></i>@User.Identity?.Name
+            </span>
+        </header>
+
+        @{
+            var _ts = TempData["Success"] as string;
+            var _te = TempData["Error"]   as string;
+        }
+        @if (_ts != null) { <span id="_toastS" data-msg="@_ts" style="display:none"></span> }
+        @if (_te != null) { <span id="_toastE" data-msg="@_te" style="display:none"></span> }
+
+        <!-- Body -->
+        <div id="adminBody">
+            @RenderBody()
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+<script>
+    toastr.options = { closeButton: true, progressBar: true, positionClass: 'toast-top-right', timeOut: 4000, extendedTimeOut: 1500 };
+    (function(){
+        var s = document.getElementById('_toastS'), e = document.getElementById('_toastE');
+        if (s) toastr.success(s.dataset.msg, 'Thành công');
+        if (e) toastr.error(e.dataset.msg, 'Lỗi');
+    })();
+</script>
+@await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

@@ -1,0 +1,78 @@
+@model DatPhongKhachSan.Models.ViewModels.LoaiPhongFormViewModel
+@{
+    ViewData["Title"] = "Sửa loại phòng";
+}
+<div class="container py-4">
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-action="Index">Loại phòng</a></li>
+            <li class="breadcrumb-item active">Sửa</li>
+        </ol>
+    </nav>
+    <h2 class="fw-bold mb-4">Sửa loại phòng - @Model.TenLoaiPhong</h2>
+
+    @* Ảnh hiện có - các form này phải nằm NGOÀI form Edit để tránh lồng form *@
+    @if (Model.AnhPhongs.Any())
+    {
+        <div class="card shadow-sm border-0 mb-3">
+            <div class="card-header bg-light fw-semibold">Ảnh hiện có</div>
+            <div class="card-body">
+                <div class="d-flex flex-wrap gap-2">
+                    @foreach (var anh in Model.AnhPhongs)
+                    {
+                        <div class="position-relative">
+                            <img src="@anh.DuongDanAnh" class="rounded border @(anh.LaAnhChinh ? "border-primary border-2" : "")"
+                                 style="width:90px;height:70px;object-fit:cover;" />
+                            @if (anh.LaAnhChinh)
+                            {
+                                <span class="position-absolute top-0 start-0 badge bg-primary" style="font-size:9px;">Chính</span>
+                            }
+                            <div class="d-flex gap-1 mt-1">
+                                @if (!anh.LaAnhChinh)
+                                {
+                                    <form asp-action="DatAnhChinh" method="post" class="d-inline">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="maAnh" value="@anh.MaAnh" />
+                                        <input type="hidden" name="maLoaiPhong" value="@Model.MaLoaiPhong" />
+                                        <button type="submit" class="btn btn-outline-primary btn-sm" style="font-size:10px;padding:1px 4px;" title="Đặt làm ảnh chính">Chính</button>
+                                    </form>
+                                }
+                                <form asp-action="XoaAnh" method="post" class="d-inline" data-confirm="Xóa ảnh này?">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="maAnh" value="@anh.MaAnh" />
+                                    <input type="hidden" name="maLoaiPhong" value="@Model.MaLoaiPhong" />
+                                    <button type="submit" class="btn btn-outline-danger btn-sm" style="font-size:10px;padding:1px 4px;"
+                                            title="Xóa ảnh">Xóa</button>
+                                </form>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+
+    <form asp-action="Edit" method="post" enctype="multipart/form-data">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="MaLoaiPhong" />
+        <partial name="_Form" model="Model" />
+        <div class="mt-3 d-flex gap-2">
+            <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i>Lưu thay đổi</button>
+            <a asp-action="Index" class="btn btn-outline-secondary">Quay lại</a>
+        </div>
+    </form>
+</div>
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        document.querySelectorAll('[data-confirm]').forEach(f => {
+            f.addEventListener('submit', e => {
+                e.preventDefault();
+                Swal.fire({ title: 'Xác nhận', text: f.dataset.confirm, icon: 'warning',
+                    showCancelButton: true, confirmButtonText: 'Xóa', cancelButtonText: 'Hủy',
+                    confirmButtonColor: '#dc3545'
+                }).then(r => { if (r.isConfirmed) f.submit(); });
+            });
+        });
+    </script>
+}

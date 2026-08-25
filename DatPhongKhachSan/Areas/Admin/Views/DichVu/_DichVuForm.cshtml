@@ -1,0 +1,30 @@
+@model DatPhongKhachSan.Models.Entities.DichVu
+<div class="mb-3">
+    <label asp-for="TenDichVu" class="form-label fw-semibold">Tên dịch vụ *</label>
+    <input asp-for="TenDichVu" class="form-control" required />
+    <span asp-validation-for="TenDichVu" class="text-danger small"></span>
+</div>
+<div class="row g-3 mb-3">
+    <div class="col-6">
+        <label asp-for="Gia" class="form-label fw-semibold">Giá (₫) *</label>
+        <input name="Gia" id="Gia" type="number" class="form-control" step="1"
+               value="@((long)Model.Gia)" required />
+        <span asp-validation-for="Gia" class="text-danger small"></span>
+    </div>
+    <div class="col-6">
+        <label asp-for="DonVi" class="form-label fw-semibold">Đơn vị</label>
+        <input asp-for="DonVi" class="form-control" placeholder="người, lượt, ngày..." />
+    </div>
+</div>
+<div class="mb-3">
+    <label asp-for="MoTa" class="form-label fw-semibold">Mô tả</label>
+    <textarea asp-for="MoTa" class="form-control" rows="2"></textarea>
+</div>
+<div class="mb-3">
+    <label asp-for="DuongDanAnh" class="form-label fw-semibold">Đường dẫn ảnh</label>
+    <input asp-for="DuongDanAnh" class="form-control" placeholder="/images/..." />
+</div>
+<div class="form-check">
+    <input asp-for="TrangThai" type="checkbox" class="form-check-input" />
+    <label asp-for="TrangThai" class="form-check-label fw-semibold">Kích hoạt</label>
+</div>

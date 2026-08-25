@@ -1,0 +1,81 @@
+@page
+@model RegisterModel
+@{
+    ViewData["Title"] = "Đăng ký tài khoản";
+}
+
+<style>
+    .auth-bg { background:linear-gradient(135deg,#e0f2fe 0%,#dde6ff 100%); min-height:calc(100vh - 72px); display:flex; align-items:center; justify-content:center; padding:40px 16px; }
+    .auth-card { background:#fff; border-radius:20px; box-shadow:0 8px 40px rgba(99,102,241,.14); padding:44px 40px; width:100%; max-width:480px; }
+    .auth-logo { text-align:center; margin-bottom:24px; }
+    .auth-logo-icon { font-size:2.4rem; color:#6366f1; margin-bottom:6px; }
+    .auth-logo-name { font-size:1.4rem; font-weight:900; color:#0f172a; }
+    .auth-logo-sub { font-size:.76rem; color:#94a3b8; }
+    .auth-title { font-size:1.3rem; font-weight:800; color:#0f172a; text-align:center; margin-bottom:4px; }
+    .auth-sub { font-size:.85rem; color:#64748b; text-align:center; margin-bottom:24px; }
+    .auth-card .form-control { border-radius:10px; font-size:.93rem; border-color:#e2e8f0; }
+    .auth-card .form-control:focus { border-color:#6366f1; box-shadow:0 0 0 3px rgba(99,102,241,.12); }
+    .auth-card .form-label { font-weight:600; font-size:.875rem; color:#374151; }
+    .btn-auth { background:linear-gradient(135deg,#0ea5e9,#6366f1); border:0; border-radius:11px; font-weight:700; padding:12px; }
+    .btn-auth:hover { opacity:.9; }
+    .pwd-hint { font-size:.75rem; color:#94a3b8; margin-top:4px; }
+    @@media (max-width:480px) { .auth-card { padding:32px 20px; } }
+</style>
+
+<div class="auth-bg">
+    <div class="auth-card">
+        <div class="auth-logo">
+            <a asp-controller="Home" asp-action="Index" class="text-decoration-none">
+                <div class="auth-logo-icon"><i class="fas fa-hotel"></i></div>
+                <div class="auth-logo-name">StarStay Hotel</div>
+                <div class="auth-logo-sub">Đà Nẵng &bull; 4 sao</div>
+            </a>
+        </div>
+
+        <h2 class="auth-title">Tạo tài khoản mới</h2>
+        <p class="auth-sub">Đăng ký để đặt phòng và theo dõi lịch sử lưu trú</p>
+
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small mb-3" role="alert"></div>
+
+        <form id="registerForm" asp-route-returnUrl="@Model.ReturnUrl" method="post">
+            <div class="mb-3">
+                <label asp-for="Input.HoTen" class="form-label">Họ và tên *</label>
+                <input asp-for="Input.HoTen" class="form-control form-control-lg"
+                       placeholder="Nguyễn Văn A" autocomplete="name" />
+                <span asp-validation-for="Input.HoTen" class="text-danger small"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="Input.Email" class="form-label">Email *</label>
+                <input asp-for="Input.Email" class="form-control form-control-lg"
+                       autocomplete="username" placeholder="your@email.com" />
+                <span asp-validation-for="Input.Email" class="text-danger small"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="Input.Password" class="form-label">Mật khẩu *</label>
+                <input asp-for="Input.Password" class="form-control form-control-lg"
+                       autocomplete="new-password" placeholder="Tối thiểu 6 ký tự" />
+                <span asp-validation-for="Input.Password" class="text-danger small"></span>
+                <div class="pwd-hint"><i class="fas fa-info-circle me-1"></i>Ít nhất 6 ký tự, gồm chữ hoa, số và ký tự đặc biệt</div>
+            </div>
+            <div class="mb-4">
+                <label asp-for="Input.ConfirmPassword" class="form-label">Xác nhận mật khẩu *</label>
+                <input asp-for="Input.ConfirmPassword" class="form-control form-control-lg"
+                       autocomplete="new-password" placeholder="Nhập lại mật khẩu" />
+                <span asp-validation-for="Input.ConfirmPassword" class="text-danger small"></span>
+            </div>
+            <button id="registerSubmit" type="submit" class="btn btn-primary btn-auth w-100 btn-lg mb-3">
+                <i class="fas fa-user-plus me-2"></i>Đăng ký
+            </button>
+        </form>
+
+        <div class="text-center">
+            <span class="text-muted small">Đã có tài khoản?</span>
+            <a asp-page="./Login" asp-route-returnUrl="@Model.ReturnUrl"
+               class="fw-semibold ms-1 text-decoration-none" style="color:#6366f1">Đăng nhập</a>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

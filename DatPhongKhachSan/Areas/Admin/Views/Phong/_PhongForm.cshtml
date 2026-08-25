@@ -1,0 +1,35 @@
+@model DatPhongKhachSan.Models.ViewModels.PhongFormViewModel
+<div class="mb-3">
+    <label asp-for="SoPhong" class="form-label fw-semibold">Số phòng *</label>
+    <input asp-for="SoPhong" class="form-control" placeholder="101, 202..." />
+    <span asp-validation-for="SoPhong" class="text-danger small"></span>
+</div>
+<div class="row g-3 mb-3">
+    <div class="col-6">
+        <label asp-for="Tang" class="form-label fw-semibold">Tầng</label>
+        <input asp-for="Tang" type="number" class="form-control" min="1" />
+    </div>
+    <div class="col-6">
+        <label asp-for="TrangThai" class="form-label fw-semibold">Trạng thái</label>
+        <select asp-for="TrangThai" class="form-select">
+            <option value="Trong">Trống</option>
+            <option value="DangDonDep">Đang dọn dẹp</option>
+        </select>
+        <div class="text-muted small mt-1">Phòng "Đang ở" chỉ thay đổi qua check-in/out.</div>
+    </div>
+</div>
+<div class="mb-3">
+    <label asp-for="MaLoaiPhong" class="form-label fw-semibold">Loại phòng *</label>
+    <select asp-for="MaLoaiPhong" class="form-select">
+        <option value="">-- Chọn loại phòng --</option>
+        @foreach (var lp in Model.DanhSachLoaiPhong)
+        {
+            <option value="@lp.MaLoaiPhong">@lp.TenLoaiPhong - @lp.GiaCoBan.ToString("N0") ₫/đêm</option>
+        }
+    </select>
+    <span asp-validation-for="MaLoaiPhong" class="text-danger small"></span>
+</div>
+<div class="mb-3">
+    <label asp-for="GhiChu" class="form-label fw-semibold">Ghi chú</label>
+    <input asp-for="GhiChu" class="form-control" placeholder="Tuỳ chọn" />
+</div>

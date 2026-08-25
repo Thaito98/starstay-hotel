@@ -1,0 +1,48 @@
+@{
+    Layout = "/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+    .manage-wrap { padding: 48px 0 64px; background: #f8fafc; min-height: calc(100vh - 72px); }
+    .manage-header { padding-bottom: 20px; border-bottom: 1.5px solid #e2e8f0; margin-bottom: 28px; }
+    .manage-header h2 { font-size: 1.5rem; font-weight: 900; color: #0f172a; margin-bottom: 4px; }
+    .manage-header p { font-size: .87rem; color: #64748b; }
+    .manage-nav-card { background: #fff; border-radius: 14px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,.05); }
+    .manage-nav-link { display: flex; align-items: center; gap: 10px; padding: 12px 18px; font-size: .9rem; font-weight: 600; color: #475569; text-decoration: none; border-left: 3px solid transparent; transition: background .15s, color .15s, border-color .15s; }
+    .manage-nav-link:hover { background: #f1f5f9; color: #0f172a; }
+    .manage-nav-link.active { background: #eff6ff; color: #6366f1; border-left-color: #6366f1; }
+    .manage-nav-link i { width: 18px; text-align: center; font-size: .9rem; }
+    .manage-content-card { background: #fff; border-radius: 14px; border: 1px solid #e2e8f0; box-shadow: 0 2px 12px rgba(0,0,0,.05); padding: 32px; }
+    .manage-content-card h3 { font-size: 1.1rem; font-weight: 800; color: #0f172a; margin-bottom: 6px; }
+    .manage-content-card .form-control { border-radius: 9px; font-size: .92rem; border-color: #e2e8f0; }
+    .manage-content-card .form-control:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,.1); }
+    .manage-content-card .form-label { font-weight: 600; font-size: .87rem; color: #374151; }
+    .btn-save { background: linear-gradient(135deg, #0ea5e9, #6366f1); border: 0; border-radius: 9px; font-weight: 700; padding: 10px 28px; }
+    .btn-save:hover { opacity: .9; }
+    @@media (max-width: 767px) { .manage-content-card { padding: 22px 16px; } .manage-wrap { padding: 28px 0 40px; } }
+</style>
+
+<div class="manage-wrap">
+    <div class="container">
+        <div class="manage-header">
+            <h2><i class="fas fa-user-cog me-2 text-primary"></i>Quản lý tài khoản</h2>
+            <p class="mb-0">Cập nhật thông tin cá nhân và bảo mật tài khoản</p>
+        </div>
+        <div class="row g-4 align-items-start">
+            <div class="col-md-3 col-lg-2">
+                <div class="manage-nav-card">
+                    <partial name="_ManageNav" />
+                </div>
+            </div>
+            <div class="col-md-9 col-lg-10">
+                <div class="manage-content-card">
+                    @RenderBody()
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @RenderSection("Scripts", required: false)
+}

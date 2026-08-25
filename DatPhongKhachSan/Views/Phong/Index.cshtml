@@ -1,0 +1,348 @@
+@model DatPhongKhachSan.Models.ViewModels.TimPhongViewModel
+@{
+    ViewData["Title"] = Model.DaTimKiem ? "Kết quả tìm phòng" : "Danh sách phòng";
+    int sodem = Model.DaTimKiem ? Math.Max(1, (Model.NgayTraPhong - Model.NgayNhanPhong).Days) : 1;
+}
+
+<style>
+    /* ── Search banner ───────────────────────────── */
+    .phong-hero {
+        background: linear-gradient(135deg, #0c1f3a 0%, #0e3059 55%, #0369a1 100%);
+        padding: 48px 0 64px;
+        position: relative; overflow: hidden;
+    }
+    .phong-hero::before {
+        content: '';
+        position: absolute; inset: 0;
+        background: radial-gradient(ellipse 70% 80% at 80% 50%, rgba(14,165,233,.15) 0%, transparent 70%);
+        pointer-events: none;
+    }
+    .search-pill {
+        background: rgba(255,255,255,.06);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255,255,255,.12);
+        border-radius: 16px;
+        padding: 24px 28px;
+        max-width: 860px; margin: 0 auto;
+    }
+    .search-pill .form-control,
+    .search-pill .form-select {
+        border-radius: 10px;
+        border: 1.5px solid rgba(255,255,255,.18);
+        background: rgba(255,255,255,.10);
+        color: #fff;
+        font-size: .88rem;
+    }
+    .search-pill .form-control::placeholder { color: rgba(255,255,255,.5); }
+    .search-pill .form-control:focus,
+    .search-pill .form-select:focus {
+        border-color: #38bdf8;
+        background: rgba(255,255,255,.15);
+        box-shadow: 0 0 0 3px rgba(56,189,248,.25);
+        color: #fff;
+    }
+    .search-pill .form-select option { background: #0c1f3a; color: #fff; }
+    .search-pill label { color: rgba(255,255,255,.7); font-size: .75rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+    .btn-search {
+        background: linear-gradient(135deg, #0ea5e9, #6366f1);
+        color: #fff; border: 0; border-radius: 10px;
+        font-weight: 700; font-size: .88rem;
+        padding: 10px 28px;
+        transition: opacity .2s, transform .15s;
+    }
+    .btn-search:hover { opacity: .9; transform: translateY(-1px); color: #fff; }
+
+    /* ── Section ─────────────────────────────────── */
+    .phong-section { padding: 48px 0 60px; background: #f8fafc; }
+    .section-tag {
+        display: inline-flex; align-items: center; gap: 6px;
+        background: #eff6ff; color: #0ea5e9;
+        border-radius: 20px; padding: 4px 14px; font-size: .75rem; font-weight: 700;
+        letter-spacing: .06em; text-transform: uppercase; margin-bottom: 8px;
+    }
+
+    /* ── Room card ───────────────────────────────── */
+    .rc2 {
+        background: #fff; border-radius: 16px;
+        box-shadow: 0 2px 12px rgba(0,0,0,.07);
+        overflow: hidden; transition: transform .25s, box-shadow .25s;
+        display: flex; flex-direction: column; height: 100%;
+    }
+    .rc2:hover { transform: translateY(-5px); box-shadow: 0 10px 32px rgba(0,0,0,.13); }
+    .rc2-img {
+        position: relative; height: 200px; overflow: hidden; flex-shrink: 0;
+    }
+    .rc2-img img { width: 100%; height: 100%; object-fit: cover; transition: transform .4s; }
+    .rc2:hover .rc2-img img { transform: scale(1.04); }
+    .rc2-placeholder {
+        width: 100%; height: 100%;
+        background: linear-gradient(135deg, #e0f2fe, #dde6ff);
+        display: flex; align-items: center; justify-content: center; color: #94a3b8; font-size: 40px;
+    }
+    .rc2-avail {
+        position: absolute; top: 12px; right: 12px;
+        border-radius: 20px; font-size: .72rem; font-weight: 700; padding: 3px 10px;
+    }
+    .rc2-body { padding: 18px 18px 16px; display: flex; flex-direction: column; flex: 1; }
+    .rc2-title { font-weight: 800; font-size: 1rem; color: #0f172a; margin-bottom: 8px; }
+    .rc2-meta {
+        display: flex; flex-wrap: wrap; gap: 10px;
+        color: #64748b; font-size: .78rem; margin-bottom: 10px;
+    }
+    .rc2-meta span { display: flex; align-items: center; gap: 4px; }
+    .rc2-amenity {
+        display: inline-flex; align-items: center; gap: 4px;
+        background: #f1f5f9; border-radius: 6px;
+        padding: 3px 8px; font-size: .72rem; color: #475569;
+        border: 1px solid #e2e8f0;
+    }
+    .rc2-amenity i { color: #0ea5e9; font-size: .68rem; }
+    .rc2-footer {
+        margin-top: auto; padding-top: 14px; border-top: 1px solid #f1f5f9;
+        display: flex; align-items: flex-end; justify-content: space-between; gap: 8px;
+    }
+    .rc2-price-label { font-size: .7rem; color: #94a3b8; }
+    .rc2-price { font-size: 1.2rem; font-weight: 900; color: #0c1f3a; line-height: 1.1; }
+    .rc2-price-unit { font-size: .72rem; font-weight: 400; color: #94a3b8; }
+    .rc2-price-total { font-size: .72rem; color: #64748b; margin-top: 2px; }
+    .btn-rc2 {
+        background: linear-gradient(135deg, #0ea5e9, #6366f1);
+        color: #fff; border: 0; border-radius: 9px;
+        padding: 7px 16px; font-size: .8rem; font-weight: 700;
+        white-space: nowrap; transition: opacity .2s, transform .15s;
+        text-decoration: none; display: inline-flex; align-items: center; gap: 5px;
+    }
+    .btn-rc2:hover { opacity: .9; transform: translateY(-1px); color: #fff; }
+
+    /* ── Result header ───────────────────────────── */
+    .result-bar {
+        background: #fff; border-radius: 12px;
+        padding: 12px 20px; margin-bottom: 24px;
+        box-shadow: 0 1px 4px rgba(0,0,0,.06);
+        display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;
+    }
+    .result-bar .chip {
+        background: #eff6ff; color: #0369a1; border-radius: 20px;
+        padding: 3px 12px; font-size: .75rem; font-weight: 600;
+        display: inline-flex; align-items: center; gap: 5px;
+    }
+
+    /* ── Empty state ─────────────────────────────── */
+    .empty-state {
+        background: #fff; border-radius: 16px; padding: 56px 32px; text-align: center;
+        box-shadow: 0 1px 4px rgba(0,0,0,.06);
+    }
+    .empty-ring {
+        width: 80px; height: 80px; border-radius: 50%;
+        background: #f1f5f9; display: inline-flex; align-items: center; justify-content: center;
+        font-size: 32px; color: #94a3b8; margin-bottom: 16px;
+    }
+</style>
+
+<!-- ══ Search Banner ════════════════════════════════════ -->
+<section class="phong-hero">
+    <div class="container">
+        <div class="text-center mb-4">
+            <h1 class="text-white fw-bold mb-1" style="font-size:1.9rem">
+                @(Model.DaTimKiem ? "Kết quả tìm phòng" : "Khám phá phòng nghỉ")
+            </h1>
+            <p class="mb-0" style="color:rgba(255,255,255,.65);font-size:.9rem">Tìm phòng phù hợp với lịch trình của bạn</p>
+        </div>
+        <div class="search-pill">
+            <form method="get" asp-action="Index">
+                <div class="row g-2 align-items-end">
+                    <div class="col-6 col-md-3">
+                        <label class="form-label mb-1"><i class="fas fa-calendar-check me-1"></i>Nhận phòng</label>
+                        <input type="date" name="ngayNhan" class="form-control"
+                               value="@Model.NgayNhanPhong.ToString("yyyy-MM-dd")"
+                               min="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <label class="form-label mb-1"><i class="fas fa-calendar-times me-1"></i>Trả phòng</label>
+                        <input type="date" name="ngayTra" class="form-control"
+                               value="@Model.NgayTraPhong.ToString("yyyy-MM-dd")"
+                               min="@DateTime.Today.AddDays(1).ToString("yyyy-MM-dd")" />
+                    </div>
+                    <div class="col-4 col-md-2">
+                        <label class="form-label mb-1"><i class="fas fa-user me-1"></i>Người lớn</label>
+                        <select name="soNguoiLon" class="form-select">
+                            @for (int i = 1; i <= 6; i++)
+                            {
+                                <option value="@i" selected="@(Model.SoNguoiLon == i ? "selected" : null)">@i người</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-4 col-md-2">
+                        <label class="form-label mb-1"><i class="fas fa-child me-1"></i>Trẻ em</label>
+                        <select name="soTreEm" class="form-select">
+                            @for (int i = 0; i <= 4; i++)
+                            {
+                                <option value="@i" selected="@(Model.SoTreEm == i ? "selected" : null)">@i</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-4 col-md-2 d-flex gap-2">
+                        <button type="submit" class="btn-search flex-grow-1">
+                            <i class="fas fa-search me-1"></i>Tìm
+                        </button>
+                        @if (Model.DaTimKiem)
+                        {
+                            <a asp-action="Index" class="btn btn-outline-light border-0 px-2" title="Xóa bộ lọc" style="border-radius:10px;background:rgba(255,255,255,.12)">
+                                <i class="fas fa-times"></i>
+                            </a>
+                        }
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
+
+<!-- ══ Room Grid ════════════════════════════════════════ -->
+<section class="phong-section">
+    <div class="container">
+
+        @if (!ViewData.ModelState.IsValid)
+        {
+            <div class="alert alert-warning rounded-3 mb-4">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                @foreach (var err in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                { <span>@err.ErrorMessage</span> }
+            </div>
+        }
+
+        <!-- Result / title bar -->
+        <div class="result-bar">
+            @if (Model.DaTimKiem)
+            {
+                <div>
+                    @if (Model.KetQua.Any())
+                    {
+                        <span class="fw-bold text-success" style="font-size:.95rem">
+                            <i class="fas fa-check-circle me-1"></i>@Model.KetQua.Count loại phòng còn trống
+                        </span>
+                    }
+                    else
+                    {
+                        <span class="fw-bold text-danger" style="font-size:.95rem">
+                            <i class="fas fa-times-circle me-1"></i>Không tìm thấy phòng trống
+                        </span>
+                    }
+                </div>
+                <div class="d-flex flex-wrap gap-2">
+                    <span class="chip"><i class="fas fa-calendar-alt"></i>@Model.NgayNhanPhong.ToString("dd/MM") => @Model.NgayTraPhong.ToString("dd/MM/yyyy") (@sodem đêm)</span>
+                    <span class="chip"><i class="fas fa-user"></i>@Model.SoNguoiLon NL@(Model.SoTreEm > 0 ? $", {Model.SoTreEm} TE" : "")</span>
+                </div>
+            }
+            else
+            {
+                <div>
+                    <span class="section-tag"><i class="fas fa-door-open"></i>Tất cả loại phòng</span>
+                    <span class="text-muted ms-2" style="font-size:.85rem">@Model.KetQua.Count loại phòng</span>
+                </div>
+                <span class="text-muted small">Chọn ngày để xem giá và phòng trống</span>
+            }
+        </div>
+
+        @if (!Model.KetQua.Any())
+        {
+            <div class="empty-state">
+                <div class="empty-ring"><i class="fas fa-bed"></i></div>
+                <h5 class="fw-bold mb-2">@(Model.DaTimKiem ? "Không có phòng trống" : "Chưa có phòng nào")</h5>
+                <p class="text-muted mb-4 mx-auto" style="max-width:360px">
+                    @(Model.DaTimKiem
+                        ? "Không tìm thấy phòng trống cho khoảng thời gian đã chọn. Hãy thử ngày khác hoặc giảm số khách."
+                        : "Hiện chưa có loại phòng nào được đăng.")
+                </p>
+                @if (Model.DaTimKiem)
+                {
+                    <a asp-action="Index" class="btn btn-outline-primary px-4">Xem tất cả phòng</a>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 g-4">
+                @foreach (var p in Model.KetQua)
+                {
+                    <div class="col">
+                        <div class="rc2">
+                            <!-- Ảnh -->
+                            <div class="rc2-img">
+                                @if (!string.IsNullOrEmpty(p.AnhChinh))
+                                {
+                                    <img src="@p.AnhChinh" alt="@p.TenLoaiPhong" />
+                                }
+                                else
+                                {
+                                    <div class="rc2-placeholder"><i class="fas fa-bed"></i></div>
+                                }
+                                @if (Model.DaTimKiem)
+                                {
+                                    @if (p.SoPhongConTrong > 0)
+                                    {
+                                        <span class="rc2-avail badge bg-success">Còn @p.SoPhongConTrong phòng</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="rc2-avail badge bg-danger">Hết phòng</span>
+                                    }
+                                }
+                            </div>
+                            <!-- Body -->
+                            <div class="rc2-body">
+                                <div class="rc2-title">@p.TenLoaiPhong</div>
+                                <div class="rc2-meta">
+                                    @if (p.DienTich.HasValue)
+                                    {
+                                        <span><i class="fas fa-ruler-combined text-sky-400"></i>@p.DienTich m²</span>
+                                    }
+                                    <span><i class="fas fa-user"></i>@p.SucChuaNguoiLon NL@(p.SucChuaTreEm > 0 ? $" · {p.SucChuaTreEm} TE" : "")</span>
+                                    @if (!string.IsNullOrEmpty(p.LoaiGiuong))
+                                    {
+                                        <span><i class="fas fa-bed"></i>@p.LoaiGiuong</span>
+                                    }
+                                </div>
+                                @if (p.TenTienNghis.Any())
+                                {
+                                    <div class="d-flex flex-wrap gap-1 mb-2">
+                                        @for (int i = 0; i < Math.Min(4, p.TenTienNghis.Count); i++)
+                                        {
+                                            <span class="rc2-amenity">
+                                                <i class="fas @p.BieuTuongTienNghis[i]"></i>@p.TenTienNghis[i]
+                                            </span>
+                                        }
+                                        @if (p.TenTienNghis.Count > 4)
+                                        {
+                                            <span class="rc2-amenity">+@(p.TenTienNghis.Count - 4)</span>
+                                        }
+                                    </div>
+                                }
+                                <!-- Footer: giá + nút -->
+                                <div class="rc2-footer">
+                                    <div>
+                                        <div class="rc2-price-label">Giá từ</div>
+                                        <div class="rc2-price">
+                                            @p.GiaCoBan.ToString("N0") ₫<span class="rc2-price-unit"> /đêm</span>
+                                        </div>
+                                        @if (Model.DaTimKiem)
+                                        {
+                                            <div class="rc2-price-total">~@((p.GiaCoBan * sodem).ToString("N0")) ₫ (@sodem đêm)</div>
+                                        }
+                                    </div>
+                                    <a asp-action="ChiTiet" asp-route-id="@p.MaLoaiPhong"
+                                       asp-route-ngayNhan="@(Model.DaTimKiem ? Model.NgayNhanPhong.ToString("yyyy-MM-dd") : null)"
+                                       asp-route-ngayTra="@(Model.DaTimKiem ? Model.NgayTraPhong.ToString("yyyy-MM-dd") : null)"
+                                       asp-route-soNguoiLon="@Model.SoNguoiLon"
+                                       class="btn-rc2">
+                                        Xem chi tiết <i class="fas fa-arrow-right"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</section>

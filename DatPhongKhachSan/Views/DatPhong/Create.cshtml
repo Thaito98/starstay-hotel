@@ -1,0 +1,329 @@
+@model DatPhongKhachSan.Models.ViewModels.DatPhongViewModel
+@{
+    ViewData["Title"] = "Đặt phòng";
+    var lp = Model.LoaiPhong!;
+    int sodem = Math.Max(1, (Model.NgayTraPhong - Model.NgayNhanPhong).Days);
+    decimal giaPhong = lp.GiaCoBan * sodem;
+    string minNgayNhan = DateTime.Today.ToString("yyyy-MM-dd");
+    string minNgayTra  = DateTime.Today.AddDays(1).ToString("yyyy-MM-dd");
+}
+
+<div class="container py-4" style="max-width:900px;">
+
+
+    <h2 class="fw-bold mb-4">Đặt phòng - @lp.TenLoaiPhong</h2>
+
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div class="alert alert-danger">
+            @foreach (var err in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+            {
+                <div>@err.ErrorMessage</div>
+            }
+        </div>
+    }
+
+    <form asp-action="Create" method="post" id="frmDatPhong">
+        @Html.AntiForgeryToken()
+
+        <!-- Hidden fields -->
+        <input type="hidden" asp-for="MaLoaiPhong" />
+        <input type="hidden" asp-for="SoNguoiLon" />
+        <input type="hidden" asp-for="SoTreEm" />
+
+        <div class="row g-4">
+            <!-- Cột trái: thông tin đặt -->
+            <div class="col-lg-7">
+
+                <!-- Chọn ngày lưu trú -->
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-body">
+                        <h6 class="fw-bold mb-3 text-primary">Ngày lưu trú</h6>
+                        <div class="row g-3">
+                            <div class="col-6">
+                                <label class="form-label fw-semibold small">
+                                    <i class="fas fa-calendar-check me-1 text-success"></i>Nhận phòng
+                                </label>
+                                <input type="date" name="NgayNhanPhong" id="NgayNhan"
+                                       class="form-control"
+                                       value="@Model.NgayNhanPhong.ToString("yyyy-MM-dd")"
+                                       min="@minNgayNhan" />
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label fw-semibold small">
+                                    <i class="fas fa-calendar-times me-1 text-danger"></i>Trả phòng
+                                </label>
+                                <input type="date" name="NgayTraPhong" id="NgayTra"
+                                       class="form-control"
+                                       value="@Model.NgayTraPhong.ToString("yyyy-MM-dd")"
+                                       min="@minNgayTra" />
+                            </div>
+                        </div>
+                        <div class="mt-2 text-muted small" id="dateSummary">
+                            <i class="fas fa-moon me-1"></i>
+                            <span id="sodemBadge" class="fw-semibold text-dark">@sodem đêm</span>
+                            &nbsp;·&nbsp;
+                            <i class="fas fa-user me-1"></i>@Model.SoNguoiLon NL@(Model.SoTreEm > 0 ? $", {Model.SoTreEm} TE" : "")
+                            &nbsp;·&nbsp;
+                            <i class="fas fa-bed me-1"></i>@lp.TenLoaiPhong
+                        </div>
+                        <div id="dateError" class="text-danger small mt-1" style="display:none;">
+                            Ngày trả phòng phải sau ngày nhận phòng
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Thông tin khách -->
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-body">
+                        @if (!(User.Identity?.IsAuthenticated ?? false))
+                        {
+                            <!-- Đặt nhanh - chưa đăng nhập -->
+                            <h6 class="fw-bold mb-1 text-primary">Đặt nhanh (không cần tài khoản)</h6>
+                            <p class="text-muted small mb-3">
+                                <a asp-area="Identity" asp-page="/Account/Login">Đăng nhập</a>
+                                để xem lịch sử đơn và tự hủy trực tuyến.
+                            </p>
+                            <div class="mb-3">
+                                <label asp-for="HoTen" class="form-label fw-semibold">
+                                    Họ tên <span class="text-danger">*</span>
+                                </label>
+                                <input asp-for="HoTen" class="form-control" placeholder="Nguyễn Văn A" />
+                                <span asp-validation-for="HoTen" class="text-danger small"></span>
+                            </div>
+                            <div class="mb-3">
+                                <label asp-for="SoDienThoai" class="form-label fw-semibold">
+                                    Số điện thoại <span class="text-danger">*</span>
+                                </label>
+                                <input asp-for="SoDienThoai" class="form-control"
+                                       placeholder="0901234567" inputmode="tel" />
+                                <span asp-validation-for="SoDienThoai" class="text-danger small"></span>
+                                <div class="text-muted small mt-1">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Muốn hủy đơn: gọi lễ tân, cung cấp SĐT để tra cứu.
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <h6 class="fw-bold mb-3 text-primary">Thông tin khách lưu trú</h6>
+                            <div class="mb-3">
+                                <label asp-for="TenKhachLuuTru" class="form-label fw-semibold">
+                                    Tên khách lưu trú <span class="text-danger">*</span>
+                                </label>
+                                <input asp-for="TenKhachLuuTru" class="form-control"
+                                       placeholder="Họ và tên người ở" />
+                                <span asp-validation-for="TenKhachLuuTru" class="text-danger small"></span>
+                            </div>
+                        }
+                        <div class="mb-3">
+                            <label asp-for="GhiChu" class="form-label fw-semibold">Ghi chú</label>
+                            <textarea asp-for="GhiChu" class="form-control" rows="2"
+                                      placeholder="Yêu cầu đặc biệt, giờ đến dự kiến..."></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dịch vụ -->
+                @if (Model.DichVuChon.Any())
+                {
+                    <div class="card border-0 shadow-sm mb-4">
+                        <div class="card-body">
+                            <h6 class="fw-bold mb-3 text-primary">Dịch vụ thêm (tuỳ chọn)</h6>
+                            @for (int i = 0; i < Model.DichVuChon.Count; i++)
+                            {
+                                var dv = Model.DichVuChon[i];
+                                <input type="hidden" name="DichVuChon[@i].MaDichVu" value="@dv.MaDichVu" />
+                                <input type="hidden" name="DichVuChon[@i].TenDichVu" value="@dv.TenDichVu" />
+                                <input type="hidden" name="DichVuChon[@i].Gia" value="@dv.Gia" />
+                                <input type="hidden" name="DichVuChon[@i].DonVi" value="@dv.DonVi" />
+                                <div class="d-flex justify-content-between align-items-center border-bottom py-2">
+                                    <div>
+                                        <span class="fw-semibold">@dv.TenDichVu</span>
+                                        <span class="text-muted small ms-2">@dv.Gia.ToString("N0") ₫/@dv.DonVi</span>
+                                    </div>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <button type="button" class="btn btn-outline-secondary btn-sm dv-minus"
+                                                data-gia="@dv.Gia">−</button>
+                                        <input type="number" name="DichVuChon[@i].SoLuong"
+                                               value="0" min="0" max="99"
+                                               class="form-control text-center dv-qty" style="width:60px;"
+                                               data-gia="@dv.Gia" />
+                                        <button type="button" class="btn btn-outline-secondary btn-sm dv-plus"
+                                                data-gia="@dv.Gia">+</button>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <!-- Cột phải: tóm tắt giá + thanh toán -->
+            <div class="col-lg-5">
+                <div class="card border-primary shadow-sm sticky-top" style="top:75px;">
+                    <div class="card-header bg-primary text-white fw-bold">
+                        <i class="fas fa-receipt me-1"></i>Tóm tắt thanh toán
+                    </div>
+                    <div class="card-body">
+                        <!-- Tiền phòng -->
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted" id="tienPhongLabel">@lp.GiaCoBan.ToString("N0") ₫ × @sodem đêm</span>
+                            <span id="tienPhong" class="fw-semibold">@giaPhong.ToString("N0") ₫</span>
+                        </div>
+
+                        <!-- Tiền dịch vụ (JS cập nhật) -->
+                        <div class="d-flex justify-content-between mb-2" id="rowDV" style="display:none!important;">
+                            <span class="text-muted">Dịch vụ</span>
+                            <span id="tienDV" class="fw-semibold">0 ₫</span>
+                        </div>
+
+                        <hr />
+
+                        <!-- Tổng -->
+                        <div class="d-flex justify-content-between mb-3">
+                            <span class="fw-bold">Tổng cộng</span>
+                            <span id="tongTien" class="fw-bold text-primary fs-5">@giaPhong.ToString("N0") ₫</span>
+                        </div>
+
+                        <!-- Loại thanh toán -->
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Hình thức thanh toán</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" asp-for="LoaiThanhToan"
+                                       value="ThanhToanDu" id="rdFull" checked />
+                                <label class="form-check-label" for="rdFull">
+                                    Thanh toán đủ 100%
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" asp-for="LoaiThanhToan"
+                                       value="Coc30" id="rdCoc" />
+                                <label class="form-check-label" for="rdCoc">
+                                    Đặt cọc 30% (trả phần còn lại khi check-in)
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Số tiền cần trả ngay -->
+                        <div class="alert alert-info py-2 mb-3">
+                            <i class="fas fa-credit-card me-1"></i>
+                            <b>Thanh toán ngay qua VNPay:</b>
+                            <span id="soTienTT" class="fw-bold text-danger ms-1">@giaPhong.ToString("N0") ₫</span>
+                        </div>
+
+                        <button type="submit" id="btnVnpay" class="btn btn-danger w-100 fw-bold">
+                            <i class="fas fa-lock me-1" id="btnVnpayIcon"></i>
+                            <span id="btnVnpayText">Thanh toán qua VNPay</span>
+                            <span id="btnVnpaySpinner" class="spinner-border spinner-border-sm ms-1 d-none" role="status"></span>
+                        </button>
+                        <p class="text-muted small text-center mt-2 mb-0">
+                            <i class="fas fa-shield-alt me-1"></i>Bảo mật bởi VNPay Sandbox
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        const giaCoBan = @lp.GiaCoBan;
+        let giaPhong   = @giaPhong;
+
+        function formatVND(n) {
+            return new Intl.NumberFormat('vi-VN').format(Math.round(n)) + ' ₫';
+        }
+
+        function tinhTongDV() {
+            let total = 0;
+            document.querySelectorAll('.dv-qty').forEach(el => {
+                total += parseFloat(el.dataset.gia) * parseInt(el.value || '0');
+            });
+            return total;
+        }
+
+        function capNhatTong() {
+            const dvTotal = tinhTongDV();
+            const tong    = giaPhong + dvTotal;
+            const isCoc   = document.getElementById('rdCoc').checked;
+            const soTienTT = isCoc ? Math.round(tong * 0.3) : tong;
+
+            document.getElementById('tienDV').textContent   = formatVND(dvTotal);
+            document.getElementById('tienPhong').textContent = formatVND(giaPhong);
+            document.getElementById('tongTien').textContent = formatVND(tong);
+            document.getElementById('soTienTT').textContent = formatVND(soTienTT);
+
+            const rowDV = document.getElementById('rowDV');
+            rowDV.style.display = dvTotal > 0 ? 'flex' : 'none';
+        }
+
+        function capNhatNgay() {
+            const d1 = new Date(document.getElementById('NgayNhan').value);
+            const d2 = new Date(document.getElementById('NgayTra').value);
+            const ok = d1 && d2 && d2 > d1;
+
+            document.getElementById('dateError').style.display = (!ok && document.getElementById('NgayNhan').value && document.getElementById('NgayTra').value) ? '' : 'none';
+
+            if (!ok) return;
+
+            const sodem = Math.round((d2 - d1) / 86400000);
+            giaPhong = giaCoBan * sodem;
+
+            // Cập nhật min cho NgayTra
+            const d1Str = document.getElementById('NgayNhan').value;
+            const nextDay = new Date(d1);
+            nextDay.setDate(nextDay.getDate() + 1);
+            document.getElementById('NgayTra').min = nextDay.toISOString().split('T')[0];
+
+            // Cập nhật hiển thị
+            document.getElementById('sodemBadge').textContent = sodem + ' đêm';
+            document.getElementById('tienPhongLabel').textContent = formatVND(giaCoBan) + ' × ' + sodem + ' đêm';
+
+            capNhatTong();
+        }
+
+        document.getElementById('NgayNhan').addEventListener('change', capNhatNgay);
+        document.getElementById('NgayTra').addEventListener('change', capNhatNgay);
+
+        document.querySelectorAll('.dv-plus').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const input = this.previousElementSibling;
+                input.value = parseInt(input.value || 0) + 1;
+                capNhatTong();
+            });
+        });
+
+        document.querySelectorAll('.dv-minus').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const input = this.nextElementSibling;
+                const v = parseInt(input.value || 0);
+                if (v > 0) { input.value = v - 1; capNhatTong(); }
+            });
+        });
+
+        document.querySelectorAll('[name="LoaiThanhToan"]').forEach(r =>
+            r.addEventListener('change', capNhatTong));
+
+        document.querySelectorAll('.dv-qty').forEach(el =>
+            el.addEventListener('change', capNhatTong));
+
+        document.getElementById('frmDatPhong').addEventListener('submit', function(e) {
+            // Validate dates before submit
+            const d1 = new Date(document.getElementById('NgayNhan').value);
+            const d2 = new Date(document.getElementById('NgayTra').value);
+            if (!d1 || !d2 || d2 <= d1) {
+                e.preventDefault();
+                document.getElementById('dateError').style.display = '';
+                return;
+            }
+            const btn = document.getElementById('btnVnpay');
+            btn.disabled = true;
+            document.getElementById('btnVnpayIcon').classList.add('d-none');
+            document.getElementById('btnVnpaySpinner').classList.remove('d-none');
+            document.getElementById('btnVnpayText').textContent = 'Đang chuyển tới VNPay…';
+        });
+    </script>
+}

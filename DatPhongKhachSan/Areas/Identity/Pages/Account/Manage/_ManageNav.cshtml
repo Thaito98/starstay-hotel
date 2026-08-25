@@ -1,0 +1,9 @@
+@inject SignInManager<DatPhongKhachSanUser> SignInManager
+<nav class="nav flex-column py-1">
+    <a class="manage-nav-link @ManageNavPages.IndexNavClass(ViewContext)" asp-page="./Index">
+        <i class="fas fa-user-circle"></i> Hồ sơ
+    </a>
+    <a class="manage-nav-link @ManageNavPages.ChangePasswordNavClass(ViewContext)" asp-page="./ChangePassword">
+        <i class="fas fa-lock"></i> Đổi mật khẩu
+    </a>
+</nav>

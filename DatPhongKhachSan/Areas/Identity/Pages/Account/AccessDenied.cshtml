@@ -1,0 +1,29 @@
+@page
+@model AccessDeniedModel
+@{
+    ViewData["Title"] = "Không có quyền truy cập";
+    Layout = "/Views/Shared/_Layout.cshtml";
+}
+<style>
+    .acc-wrap { min-height:calc(100vh - 130px); display:flex; align-items:center; justify-content:center; padding:40px 16px; }
+    .acc-ring  { width:96px; height:96px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:38px; margin-bottom:20px; background:#f59e0b1a; color:#f59e0b; border:2px solid #f59e0b30; }
+    .acc-code  { font-size:5rem; font-weight:900; line-height:1; color:#f59e0b; letter-spacing:-3px; margin-bottom:6px; }
+    .acc-title { font-size:1.35rem; font-weight:800; color:#0f172a; margin-bottom:10px; }
+    .acc-desc  { color:#64748b; font-size:.93rem; margin-bottom:28px; line-height:1.7; max-width:420px; }
+</style>
+<div class="acc-wrap">
+    <div class="text-center">
+        <div class="acc-ring"><i class="fas fa-lock"></i></div>
+        <div class="acc-code">403</div>
+        <div class="acc-title">Không có quyền truy cập</div>
+        <p class="acc-desc mx-auto">Bạn không có quyền truy cập vào trang này. Vui lòng liên hệ quản trị viên nếu bạn cho rằng đây là nhầm lẫn.</p>
+        <div class="d-flex gap-3 justify-content-center flex-wrap">
+            <a href="/" class="btn btn-primary px-5 py-2 fw-bold" style="border-radius:10px">
+                <i class="fas fa-home me-2"></i>Trang chủ
+            </a>
+            <button onclick="history.back()" class="btn btn-outline-secondary px-5 py-2 fw-semibold" style="border-radius:10px">
+                <i class="fas fa-arrow-left me-2"></i>Quay lại
+            </button>
+        </div>
+    </div>
+</div>

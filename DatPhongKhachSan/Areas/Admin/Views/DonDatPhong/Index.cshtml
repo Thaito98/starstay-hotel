@@ -1,0 +1,190 @@
+@model List<DatPhongKhachSan.Models.ViewModels.LichSuDonViewModel>
+@{
+    ViewData["Title"] = "Quản lý đơn đặt phòng";
+    var trangThaiLabels = new Dictionary<string, (string text, string badge)>
+    {
+        ["ChoXacNhan"]  = ("Chờ xác nhận",   "warning"),
+        ["DaXacNhan"]   = ("Đã xác nhận",    "primary"),
+        ["DangO"]       = ("Đang ở",         "success"),
+        ["DaTraPhong"]  = ("Đã trả phòng",   "secondary"),
+        ["ChoHoanTien"] = ("Chờ hoàn tiền",  "info"),
+        ["DaHuy"]       = ("Đã hủy",         "danger"),
+    };
+}
+
+<div class="container-fluid py-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+        <h2 class="fw-bold mb-0"><i class="fas fa-file-invoice me-2 text-primary"></i>Tất cả đơn đặt phòng</h2>
+        <div class="d-flex flex-wrap gap-3 text-muted small">
+            <span><b>@Model.Count</b> đơn</span>
+            <span>Thu: <b class="text-success">@ViewBag.TongDoanhThu?.ToString("N0") ₫</b></span>
+        </div>
+    </div>
+
+    <!-- Bộ lọc -->
+    <div class="card shadow-sm border-0 mb-3">
+        <div class="card-body">
+            <form method="get" asp-action="Index" class="row g-2 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold small">Tìm kiếm</label>
+                    <input type="text" name="tuKhoa" class="form-control form-control-sm"
+                           value="@ViewBag.TuKhoa" placeholder="Mã đơn, tên, SĐT..." />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label fw-semibold small">Trạng thái</label>
+                    <select name="trangThai" class="form-select form-select-sm">
+                        <option value="">Tất cả</option>
+                        @foreach (var kv in trangThaiLabels)
+                        {
+                            <option value="@kv.Key" selected="@(ViewBag.TrangThai == kv.Key ? "selected" : null)">@kv.Value.text</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label fw-semibold small">Nguồn</label>
+                    <select name="nguonDat" class="form-select form-select-sm">
+                        <option value="">Tất cả</option>
+                        <option value="Online" selected="@(ViewBag.NguonDat == "Online" ? "selected" : null)">Online</option>
+                        <option value="WalkIn" selected="@(ViewBag.NguonDat == "WalkIn" ? "selected" : null)">Walk-in</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label fw-semibold small">Nhóm hoàn tiền</label>
+                    <select name="nhomHoan" class="form-select form-select-sm">
+                        <option value="">Tất cả</option>
+                        <option value="tren7"   selected="@(ViewBag.NhomHoan == "tren7"   ? "selected" : null)">Hoàn 100% (&gt;7 ngày)</option>
+                        <option value="tu3den7" selected="@(ViewBag.NhomHoan == "tu3den7" ? "selected" : null)">Hoàn 50% (3-7 ngày)</option>
+                        <option value="duoi3"   selected="@(ViewBag.NhomHoan == "duoi3"   ? "selected" : null)">Hoàn 0% (&lt;3 ngày)</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label fw-semibold small">Từ ngày</label>
+                    <input type="date" name="tuNgay" class="form-control form-control-sm" value="@ViewBag.TuNgay" />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label fw-semibold small">Đến ngày</label>
+                    <input type="date" name="denNgay" class="form-control form-control-sm" value="@ViewBag.DenNgay" />
+                </div>
+                <div class="col-12 col-md-1 d-flex gap-1">
+                    <button type="submit" class="btn btn-primary btn-sm flex-grow-1"><i class="fas fa-search"></i></button>
+                    <a asp-action="Index" class="btn btn-outline-secondary btn-sm" title="Xóa lọc"><i class="fas fa-times"></i></a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+
+            <!-- ── Mobile cards ──────────────────────────────────── -->
+            <div class="d-md-none p-2 d-flex flex-column gap-2">
+                @foreach (var d in Model)
+                {
+                    var (ttText, ttBadge) = trangThaiLabels.GetValueOrDefault(d.TrangThai, (d.TrangThai, "secondary"));
+                    <div class="card border rounded-3 shadow-sm">
+                        <div class="card-body p-3">
+                            <!-- Header: mã đơn + trạng thái -->
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div>
+                                    <span class="fw-bold text-primary">@d.MaDon</span>
+                                    <span class="badge @(d.NguonDat == "WalkIn" ? "bg-info" : "bg-light text-dark border") ms-1" style="font-size:.68rem;">@d.NguonDat</span>
+                                    <div class="text-muted" style="font-size:.72rem;">@d.NgayDat.ToString("dd/MM/yyyy HH:mm")</div>
+                                    @if (d.NgayHuy.HasValue)
+                                    {
+                                        <div class="text-danger" style="font-size:.72rem;"><i class="fas fa-ban me-1"></i>Hủy: @d.NgayHuy.Value.ToString("dd/MM/yy HH:mm")</div>
+                                    }
+                                </div>
+                                <span class="badge bg-@ttBadge">@ttText</span>
+                            </div>
+                            <!-- Phòng + ngày -->
+                            <div class="d-flex justify-content-between align-items-start small mb-2">
+                                <div>
+                                    <i class="fas fa-bed text-primary me-1"></i>
+                                    <span class="fw-semibold">@d.TenLoaiPhong</span>
+                                    <span class="text-muted ms-1">P@d.SoPhong</span>
+                                </div>
+                                <div class="text-end text-muted">
+                                    <div>@d.NgayNhanPhong.ToString("dd/MM") => @d.NgayTraPhong.ToString("dd/MM/yy")</div>
+                                    <div>@d.SoDem đêm</div>
+                                </div>
+                            </div>
+                            <!-- Tiền + nút -->
+                            <div class="d-flex justify-content-between align-items-center pt-2 border-top">
+                                <div class="small">
+                                    <span class="text-muted">Tổng: </span><span class="fw-bold">@d.TongTien.ToString("N0") ₫</span>
+                                    <br/>
+                                    <span class="text-muted">Đã trả: </span>
+                                    <span class="@(d.ConLai > 0 ? "text-warning fw-semibold" : "text-success fw-semibold")">@d.DaTra.ToString("N0") ₫</span>
+                                    @if (d.TrangThai is "ChoHoanTien" or "DaHuy" && d.TiLeHoan >= 0)
+                                    {
+                                        <br/><span class="text-info"><i class="fas fa-undo-alt me-1"></i>Hoàn @d.TiLeHoan% @(d.SoTienHoan > 0 ? "= " + d.SoTienHoan.ToString("N0") + " ₫" : "(không hoàn)")</span>
+                                    }
+                                </div>
+                                <a asp-action="ChiTiet" asp-route-id="@d.MaDatPhong"
+                                   class="btn btn-outline-primary btn-sm">
+                                    <i class="fas fa-eye me-1"></i>Chi tiết
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                }
+                @if (!Model.Any()) { <div class="text-center text-muted py-4 small">Không có đơn nào.</div> }
+            </div>
+
+            <!-- ── Desktop table ──────────────────────────────────── -->
+            <div class="table-responsive d-none d-md-block">
+            <table id="tbl" class="table table-hover align-middle mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Mã đơn</th><th>Khách</th><th>Phòng</th>
+                        <th>Nhận/Trả</th><th>Trạng thái</th><th>Nguồn</th>
+                        <th>Ngày hủy</th>
+                        <th class="text-end">Tổng tiền</th><th class="text-end">Đã trả</th><th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var d in Model)
+                    {
+                        var (ttText, ttBadge) = trangThaiLabels.GetValueOrDefault(d.TrangThai, (d.TrangThai, "secondary"));
+                        <tr>
+                            <td><span class="fw-bold text-primary small">@d.MaDon</span><br/><span class="text-muted" style="font-size:11px;">@d.NgayDat.ToString("dd/MM HH:mm")</span></td>
+                            <td class="small">@d.TenLoaiPhong<br/><span class="text-muted">P@d.SoPhong</span></td>
+                            <td class="small text-nowrap">@d.NgayNhanPhong.ToString("dd/MM")<br/>=>@d.NgayTraPhong.ToString("dd/MM/yy")</td>
+                            <td class="small text-nowrap">@d.NgayNhanPhong.ToString("dd/MM")<br/>=>@d.NgayTraPhong.ToString("dd/MM/yy") (@d.SoDem đêm)</td>
+                            <td><span class="badge bg-@ttBadge">@ttText</span></td>
+                            <td><span class="badge @(d.NguonDat == "WalkIn" ? "bg-info" : "bg-light text-dark border") small">@d.NguonDat</span></td>
+                            <td class="small text-muted text-nowrap">
+                                @if (d.NgayHuy.HasValue)
+                                {
+                                    @d.NgayHuy.Value.ToString("dd/MM/yy HH:mm")
+                                }
+                                else { <span>-</span> }
+                            </td>
+                            <td class="text-end fw-semibold small">
+                                @d.TongTien.ToString("N0") ₫
+                                @if (d.TrangThai is "ChoHoanTien" or "DaHuy")
+                                {
+                                    <br/><span class="text-info" style="font-size:10px;"><i class="fas fa-undo-alt"></i> Hoàn @d.TiLeHoan%@(d.SoTienHoan > 0 ? " = " + d.SoTienHoan.ToString("N0") + " ₫" : "")</span>
+                                }
+                            </td>
+                            <td class="text-end small @(d.ConLai > 0 ? "text-warning" : "text-success")">@d.DaTra.ToString("N0") ₫</td>
+                            <td>
+                                <a asp-action="ChiTiet" asp-route-id="@d.MaDatPhong"
+                                   class="btn btn-outline-primary btn-sm">Chi tiết</a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" />
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    <script>$('#tbl').DataTable({ language: { url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/vi.json' }, order: [[0,'desc']] });</script>
+}

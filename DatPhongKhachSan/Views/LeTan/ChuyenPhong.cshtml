@@ -1,0 +1,70 @@
+@model DatPhongKhachSan.Models.ViewModels.ChuyenPhongViewModel
+@{
+    ViewData["Title"] = "Chuyển phòng";
+}
+
+<div class="container py-4" style="max-width:620px;">
+    <h3 class="fw-bold mb-4"><i class="fas fa-exchange-alt me-2 text-info"></i>Chuyển phòng</h3>
+
+    <div class="alert alert-info">
+        <b>Đơn @Model.MaDon</b> - Đang ở phòng <b>@Model.PhongHien</b>
+        (@Model.LoaiPhongHien)
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body">
+            <form asp-action="ChuyenPhong" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="MaDatPhong" />
+                <input type="hidden" asp-for="MaDon" />
+                <input type="hidden" asp-for="PhongHien" />
+                <input type="hidden" asp-for="LoaiPhongHien" />
+
+                <div class="mb-3">
+                    <label asp-for="MaPhongMoi" class="form-label fw-semibold">
+                        Phòng mới <span class="text-danger">*</span>
+                    </label>
+                    @if (Model.DanhSachPhongTrong.Any())
+                    {
+                        <select asp-for="MaPhongMoi" class="form-select">
+                            <option value="">-- Chọn phòng --</option>
+                            @foreach (var p in Model.DanhSachPhongTrong)
+                            {
+                                <option value="@p.MaPhong">
+                                    Phòng @p.SoPhong - @p.MaLoaiPhongNavigation?.TenLoaiPhong (Tầng @p.Tang)
+                                </option>
+                            }
+                        </select>
+                    }
+                    else
+                    {
+                        <div class="alert alert-warning">Hiện không có phòng trống để chuyển.</div>
+                    }
+                    <span asp-validation-for="MaPhongMoi" class="text-danger small"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="LyDo" class="form-label fw-semibold">
+                        Lý do chuyển phòng <span class="text-danger">*</span>
+                    </label>
+                    <textarea asp-for="LyDo" class="form-control" rows="2"
+                              placeholder="VD: Khách yêu cầu phòng tầng cao hơn, sửa chữa thiết bị..."></textarea>
+                    <span asp-validation-for="LyDo" class="text-danger small"></span>
+                </div>
+
+                <div class="d-flex gap-2">
+                    @if (Model.DanhSachPhongTrong.Any())
+                    {
+                        <button type="submit" class="btn btn-info text-dark fw-semibold">
+                            <i class="fas fa-exchange-alt me-1"></i>Xác nhận chuyển phòng
+                        </button>
+                    }
+                    <a asp-action="ChiTietDon" asp-route-id="@Model.MaDatPhong"
+                       class="btn btn-outline-secondary">Hủy</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

@@ -1,0 +1,188 @@
+@model DatPhongKhachSan.Models.ViewModels.TraCuuDonViewModel
+@{
+    ViewData["Title"] = "Tra cứu đơn đặt phòng";
+    var trangThaiLabels = new Dictionary<string, (string text, string badge)>
+    {
+        ["ChoXacNhan"]  = ("Chờ xác nhận",  "warning"),
+        ["DaXacNhan"]   = ("Đã xác nhận",   "primary"),
+        ["DangO"]       = ("Đang ở",        "success"),
+        ["DaTraPhong"]  = ("Đã trả phòng",  "secondary"),
+        ["ChoHoanTien"] = ("Chờ hoàn tiền", "info"),
+        ["DaHuy"]       = ("Đã hủy",        "danger"),
+    };
+}
+
+<div class="container-fluid py-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+        <h2 class="fw-bold mb-0"><i class="fas fa-search me-2 text-primary"></i>Tra cứu đơn đặt phòng</h2>
+        <a asp-action="DatWalkIn" class="btn btn-success">
+            <i class="fas fa-plus me-1"></i>Đặt walk-in
+        </a>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show">
+            <i class="fas fa-check-circle me-2"></i>@TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Form tìm kiếm -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body">
+            <form asp-action="TraCuuDon" method="post" class="row g-2 align-items-end">
+                <div class="col-md-5">
+                    <label class="form-label fw-semibold small">Tìm kiếm</label>
+                    <input asp-for="TuKhoa" class="form-control"
+                           placeholder="Mã đơn, tên khách, số điện thoại..." />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold small">Trạng thái</label>
+                    <select asp-for="LocTrangThai" class="form-select">
+                        <option value="">-- Tất cả --</option>
+                        @foreach (var kv in trangThaiLabels)
+                        {
+                            <option value="@kv.Key">@kv.Value.text</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-search me-1"></i>Tìm
+                    </button>
+                </div>
+                @if (Model.DaTimKiem)
+                {
+                    <div class="col-md-2">
+                        <a asp-action="TraCuuDon" class="btn btn-outline-secondary w-100">
+                            <i class="fas fa-times me-1"></i>Xóa lọc
+                        </a>
+                    </div>
+                }
+            </form>
+        </div>
+    </div>
+
+    <!-- Kết quả -->
+    @if (Model.DaTimKiem)
+    {
+        <div class="mb-2 text-muted small">Tìm thấy <b>@Model.KetQua.Count</b> đơn</div>
+
+        @if (!Model.KetQua.Any())
+        {
+            <div class="alert alert-info text-center">Không tìm thấy đơn nào phù hợp.</div>
+        }
+        else
+        {
+            <!-- ── Mobile cards ──────────────────────────────────── -->
+            <div class="d-md-none d-flex flex-column gap-2">
+                @foreach (var d in Model.KetQua)
+                {
+                    var (ttText, ttBadge) = trangThaiLabels.GetValueOrDefault(d.TrangThai, (d.TrangThai, "secondary"));
+                    <div class="card border rounded-3 shadow-sm">
+                        <div class="card-body p-3">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div>
+                                    <span class="fw-bold text-primary">@d.MaDon</span>
+                                    <span class="badge @(d.NguonDat == "WalkIn" ? "bg-info" : "bg-light text-dark border") ms-1" style="font-size:.68rem;">@d.NguonDat</span>
+                                </div>
+                                <span class="badge bg-@ttBadge">@ttText</span>
+                            </div>
+                            <div class="fw-semibold">@d.TenKhach</div>
+                            @if (!string.IsNullOrEmpty(d.SoDienThoai))
+                            {
+                                <div class="text-muted small">@d.SoDienThoai</div>
+                            }
+                            <div class="small mt-1">
+                                <i class="fas fa-bed text-primary me-1"></i>@d.TenLoaiPhong
+                                <span class="text-muted ms-1">P@d.SoPhong</span>
+                            </div>
+                            <div class="small text-muted">@d.NgayNhanPhong.ToString("dd/MM") => @d.NgayTraPhong.ToString("dd/MM/yyyy") (@d.SoDem đêm)</div>
+                            <div class="d-flex justify-content-between align-items-center mt-2 pt-2 border-top">
+                                <div class="small">
+                                    @if (d.ConLai > 0 && d.TrangThai is "DaXacNhan" or "DangO")
+                                    {
+                                        <span class="text-warning fw-semibold">Còn lại: @d.ConLai.ToString("N0") ₫</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-success fw-semibold">Tổng: @d.TongTien.ToString("N0") ₫</span>
+                                    }
+                                </div>
+                                <a asp-action="ChiTietDon" asp-route-id="@d.MaDatPhong" class="btn btn-outline-primary btn-sm">
+                                    Chi tiết
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <!-- ── Desktop table ──────────────────────────────────── -->
+            <div class="table-responsive d-none d-md-block">
+                <table class="table table-hover align-middle">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Mã đơn</th>
+                            <th>Khách</th>
+                            <th>Phòng</th>
+                            <th>Ngày nhận / trả</th>
+                            <th>Trạng thái</th>
+                            <th>Tiền còn lại</th>
+                            <th>Nguồn</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var d in Model.KetQua)
+                        {
+                            var (ttText, ttBadge) = trangThaiLabels.GetValueOrDefault(
+                                d.TrangThai, (d.TrangThai, "secondary"));
+                            <tr>
+                                <td><span class="fw-mono fw-bold">@d.MaDon</span></td>
+                                <td>
+                                    <div class="fw-semibold">@d.TenKhach</div>
+                                    @if (!string.IsNullOrEmpty(d.SoDienThoai))
+                                    {
+                                        <div class="text-muted small">@d.SoDienThoai</div>
+                                    }
+                                </td>
+                                <td>
+                                    <div>@d.TenLoaiPhong</div>
+                                    <div class="text-muted small">Phòng @d.SoPhong</div>
+                                </td>
+                                <td class="small">
+                                    @d.NgayNhanPhong.ToString("dd/MM") => @d.NgayTraPhong.ToString("dd/MM/yyyy")
+                                    <div class="text-muted">@d.SoDem đêm</div>
+                                </td>
+                                <td><span class="badge bg-@ttBadge">@ttText</span></td>
+                                <td>
+                                    @if (d.ConLai > 0 && d.TrangThai is "DaXacNhan" or "DangO")
+                                    {
+                                        <span class="text-warning fw-semibold">@d.ConLai.ToString("N0") ₫</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </td>
+                                <td>
+                                    <span class="badge @(d.NguonDat == "WalkIn" ? "bg-info" : "bg-light text-dark border")">
+                                        @d.NguonDat
+                                    </span>
+                                </td>
+                                <td>
+                                    <a asp-action="ChiTietDon" asp-route-id="@d.MaDatPhong"
+                                       class="btn btn-outline-primary btn-sm">
+                                        Chi tiết
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    }
+</div>

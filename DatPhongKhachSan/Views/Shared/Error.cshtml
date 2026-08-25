@@ -1,0 +1,40 @@
+@model ErrorViewModel
+@{
+    var sc     = Model.StatusCode;
+    var icon   = sc == 404 ? "fa-search"              : sc == 403 ? "fa-lock"         : "fa-triangle-exclamation";
+    var color  = sc == 404 ? "#0ea5e9"                : sc == 403 ? "#f59e0b"         : "#ef4444";
+    var title  = sc == 404 ? "Trang không tồn tại"   : sc == 403 ? "Không có quyền" : "Đã xảy ra lỗi";
+    var desc   = sc == 404
+        ? "Trang bạn đang tìm kiếm không tồn tại hoặc đã được di chuyển."
+        : sc == 403
+        ? "Bạn không có quyền truy cập vào trang này."
+        : "Máy chủ gặp sự cố khi xử lý yêu cầu. Vui lòng thử lại sau hoặc liên hệ hỗ trợ.";
+    ViewData["Title"] = title;
+}
+<style>
+    .err-wrap { min-height:calc(100vh - 130px); display:flex; align-items:center; justify-content:center; padding:40px 16px; }
+    .err-ring  { width:96px; height:96px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:38px; margin-bottom:20px; background:@(color)1a; color:@color; border:2px solid @(color)30; }
+    .err-code  { font-size:5rem; font-weight:900; line-height:1; color:@color; letter-spacing:-3px; margin-bottom:6px; }
+    .err-title { font-size:1.35rem; font-weight:800; color:#0f172a; margin-bottom:10px; }
+    .err-desc  { color:#64748b; font-size:.93rem; margin-bottom:28px; line-height:1.7; max-width:420px; }
+</style>
+<div class="err-wrap">
+    <div class="text-center">
+        <div class="err-ring"><i class="fas @icon"></i></div>
+        <div class="err-code">@sc</div>
+        <div class="err-title">@title</div>
+        <p class="err-desc mx-auto">@desc</p>
+        <div class="d-flex gap-3 justify-content-center flex-wrap">
+            <a href="/" class="btn btn-primary px-5 py-2 fw-bold" style="border-radius:10px">
+                <i class="fas fa-home me-2"></i>Trang chủ
+            </a>
+            <button onclick="history.back()" class="btn btn-outline-secondary px-5 py-2 fw-semibold" style="border-radius:10px">
+                <i class="fas fa-arrow-left me-2"></i>Quay lại
+            </button>
+        </div>
+        @if (Model.ShowRequestId)
+        {
+            <p class="text-muted small mt-4 mb-0"><i class="fas fa-tag me-1 opacity-50"></i>ID: <code>@Model.RequestId</code></p>
+        }
+    </div>
+</div>

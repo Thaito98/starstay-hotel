@@ -1,0 +1,268 @@
+@model DatPhongKhachSan.Models.ViewModels.LoaiPhongDetailViewModel
+@{
+    ViewData["Title"] = Model.LoaiPhong.TenLoaiPhong;
+    var lp = Model.LoaiPhong;
+    var anhChinh = Model.Anhs.FirstOrDefault(a => a.LaAnhChinh) ?? Model.Anhs.FirstOrDefault();
+    var anhPhu   = Model.Anhs.Where(a => a.MaAnh != anhChinh?.MaAnh).Take(4).ToList();
+}
+
+<style>
+    /* ── Layout ──────────────────────────────────── */
+    .ct-wrap { background: #f8fafc; padding: 40px 0 64px; }
+
+    /* ── Gallery ─────────────────────────────────── */
+    .gallery-main {
+        border-radius: 16px; overflow: hidden;
+        background: linear-gradient(135deg, #e0f2fe, #dde6ff);
+        height: 400px; position: relative; cursor: pointer;
+    }
+    .gallery-main img {
+        width: 100%; height: 100%; object-fit: cover;
+        transition: transform .4s;
+    }
+    .gallery-main:hover img { transform: scale(1.02); }
+    .gallery-placeholder {
+        width: 100%; height: 100%;
+        display: flex; align-items: center; justify-content: center;
+        color: #94a3b8; font-size: 64px;
+    }
+    .gallery-thumb-row { display: flex; gap: 8px; margin-top: 10px; }
+    .gallery-thumb {
+        flex: 1; height: 70px; border-radius: 9px; overflow: hidden;
+        cursor: pointer; border: 2px solid transparent;
+        transition: border-color .2s, opacity .2s;
+        background: #e2e8f0;
+    }
+    .gallery-thumb img { width: 100%; height: 100%; object-fit: cover; }
+    .gallery-thumb:hover { border-color: #0ea5e9; opacity: .9; }
+    .gallery-thumb.active { border-color: #6366f1; }
+    .gallery-avail {
+        position: absolute; top: 14px; right: 14px;
+        border-radius: 20px; font-size: .78rem; font-weight: 700; padding: 5px 14px;
+    }
+
+    /* ── Info panel ──────────────────────────────── */
+    .info-panel { display: flex; flex-direction: column; height: 100%; }
+    .ct-title { font-size: 1.6rem; font-weight: 900; color: #0f172a; line-height: 1.2; margin-bottom: 14px; }
+    .spec-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+    .spec-pill {
+        display: inline-flex; align-items: center; gap: 6px;
+        background: #f1f5f9; border: 1px solid #e2e8f0;
+        border-radius: 20px; padding: 5px 14px;
+        font-size: .82rem; color: #334155; font-weight: 600;
+    }
+    .spec-pill i { color: #0ea5e9; }
+
+    /* ── Amenities grid ──────────────────────────── */
+    .amenity-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 16px; }
+    .amenity-item {
+        display: flex; align-items: center; gap: 8px;
+        background: #f8fafc; border-radius: 8px; padding: 8px 12px;
+        font-size: .82rem; color: #475569;
+    }
+    .amenity-icon {
+        width: 28px; height: 28px; border-radius: 7px; flex-shrink: 0;
+        background: linear-gradient(135deg,#eff6ff,#eef2ff);
+        display: flex; align-items: center; justify-content: center;
+        font-size: .72rem; color: #6366f1;
+    }
+
+    /* ── Description ─────────────────────────────── */
+    .ct-desc { color: #64748b; font-size: .88rem; line-height: 1.75; margin-bottom: 20px; }
+
+    /* ── Price box ───────────────────────────────── */
+    .price-box {
+        background: #fff;
+        border: 1.5px solid #e0e7ff;
+        border-radius: 16px;
+        padding: 20px 22px;
+        box-shadow: 0 4px 18px rgba(99,102,241,.10);
+        margin-top: auto;
+    }
+    .price-label { font-size: .72rem; color: #94a3b8; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; }
+    .price-main  { font-size: 2rem; font-weight: 900; color: #0c1f3a; line-height: 1.1; }
+    .price-unit  { font-size: .82rem; font-weight: 400; color: #94a3b8; }
+    .btn-book {
+        display: block; width: 100%; text-align: center;
+        background: linear-gradient(135deg, #0ea5e9, #6366f1);
+        color: #fff; border: 0; border-radius: 11px;
+        padding: 13px 0; font-weight: 800; font-size: .95rem;
+        transition: opacity .2s, transform .15s; text-decoration: none;
+        margin-top: 14px;
+    }
+    .btn-book:hover { opacity: .92; transform: translateY(-1px); color: #fff; }
+    .btn-book-secondary {
+        display: block; width: 100%; text-align: center;
+        background: linear-gradient(135deg,#10b981,#0d9488);
+        color: #fff; border: 0; border-radius: 11px;
+        padding: 13px 0; font-weight: 800; font-size: .95rem;
+        transition: opacity .2s, transform .15s; text-decoration: none;
+        margin-top: 14px;
+    }
+    .btn-book-secondary:hover { opacity: .92; transform: translateY(-1px); color: #fff; }
+    .trust-line { font-size: .74rem; color: #94a3b8; text-align: center; margin-top: 8px; }
+
+    /* ── Responsive ──────────────────────────────── */
+    @@media (max-width: 767px) {
+        .gallery-main { height: 250px; }
+        .gallery-thumb { height: 54px; }
+        .ct-title { font-size: 1.3rem; }
+        .amenity-grid { grid-template-columns: 1fr; }
+        .price-main { font-size: 1.6rem; }
+    }
+</style>
+
+<div class="ct-wrap">
+    <div class="container">
+
+
+
+        <div class="row g-4 g-lg-5">
+
+            <!-- ── Cột trái: Gallery ───────────────────── -->
+            <div class="col-lg-7">
+                <div class="gallery-main" id="galleryMain">
+                    @if (anhChinh != null)
+                    {
+                        <img src="@anhChinh.DuongDanAnh" alt="@lp.TenLoaiPhong" id="mainImg" />
+                    }
+                    else
+                    {
+                        <div class="gallery-placeholder"><i class="fas fa-bed"></i></div>
+                    }
+                    @if (Model.NgayNhanPhong.HasValue && Model.NgayTraPhong.HasValue)
+                    {
+                        @if (Model.SoPhongHienCo > 0)
+                        {
+                            <span class="gallery-avail badge bg-success"><i class="fas fa-check-circle me-1"></i>Còn @Model.SoPhongHienCo phòng</span>
+                        }
+                        else
+                        {
+                            <span class="gallery-avail badge bg-danger"><i class="fas fa-times-circle me-1"></i>Hết phòng</span>
+                        }
+                    }
+                </div>
+
+                @if (anhPhu.Any())
+                {
+                    <div class="gallery-thumb-row">
+                        <!-- Thumbnail của ảnh chính -->
+                        <div class="gallery-thumb active" onclick="switchImg('@anhChinh!.DuongDanAnh', this)">
+                            <img src="@anhChinh!.DuongDanAnh" alt="" />
+                        </div>
+                        @foreach (var anh in anhPhu)
+                        {
+                            <div class="gallery-thumb" onclick="switchImg('@anh.DuongDanAnh', this)">
+                                <img src="@anh.DuongDanAnh" alt="" />
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+
+            <!-- ── Cột phải: Thông tin ────────────────── -->
+            <div class="col-lg-5">
+                <div class="info-panel">
+                    <h1 class="ct-title">@lp.TenLoaiPhong</h1>
+
+                    <!-- Thông số -->
+                    <div class="spec-row">
+                        @if (lp.DienTich.HasValue)
+                        {
+                            <span class="spec-pill"><i class="fas fa-ruler-combined"></i>@lp.DienTich m²</span>
+                        }
+                        <span class="spec-pill"><i class="fas fa-user"></i>@lp.SucChuaNguoiLon người lớn</span>
+                        @if (lp.SucChuaTreEm > 0)
+                        {
+                            <span class="spec-pill"><i class="fas fa-child"></i>@lp.SucChuaTreEm trẻ em</span>
+                        }
+                        @if (!string.IsNullOrEmpty(lp.LoaiGiuong))
+                        {
+                            <span class="spec-pill"><i class="fas fa-bed"></i>@lp.LoaiGiuong</span>
+                        }
+                    </div>
+
+                    <!-- Tiện nghi -->
+                    @if (Model.TienNghis.Any())
+                    {
+                        <div class="fw-bold mb-2" style="font-size:.85rem;color:#0f172a">
+                            <i class="fas fa-star me-1 text-warning"></i>Tiện nghi nổi bật
+                        </div>
+                        <div class="amenity-grid mb-2">
+                            @foreach (var tn in Model.TienNghis)
+                            {
+                                <div class="amenity-item">
+                                    <div class="amenity-icon"><i class="fas @(tn.BieuTuong ?? "fa-check")"></i></div>
+                                    <span>@tn.TenTienNghi</span>
+                                </div>
+                            }
+                        </div>
+                    }
+
+                    <!-- Mô tả -->
+                    @if (!string.IsNullOrEmpty(lp.MoTa))
+                    {
+                        <p class="ct-desc">@lp.MoTa</p>
+                    }
+
+                    <!-- Price box -->
+                    <div class="price-box">
+                        <div class="d-flex align-items-baseline gap-2 mb-3">
+                            <div>
+                                <div class="price-label">Giá chỉ từ</div>
+                                <div class="price-main">@lp.GiaCoBan.ToString("N0") ₫<span class="price-unit"> /đêm</span></div>
+                            </div>
+                        </div>
+
+                        @{
+                            bool hetPhong = Model.NgayNhanPhong.HasValue && Model.NgayTraPhong.HasValue
+                                         && Model.SoPhongHienCo == 0;
+                        }
+                        @if (!hetPhong)
+                        {
+                            @if (User.IsInRole("NhanVien") || User.IsInRole("Admin"))
+                            {
+                                <a asp-controller="LeTan" asp-action="DatWalkIn"
+                                   asp-route-maLoaiPhong="@lp.MaLoaiPhong"
+                                   class="btn-book-secondary">
+                                    <i class="fas fa-walking me-2"></i>Đặt walk-in (tại quầy)
+                                </a>
+                                <div class="trust-line"><i class="fas fa-info-circle me-1"></i>Nhân viên đặt qua trang lễ tân</div>
+                            }
+                            else
+                            {
+                                <a asp-controller="DatPhong" asp-action="Create"
+                                   asp-route-maLoaiPhong="@lp.MaLoaiPhong"
+                                   asp-route-ngayNhan="@Model.NgayNhanPhong?.ToString("yyyy-MM-dd")"
+                                   asp-route-ngayTra="@Model.NgayTraPhong?.ToString("yyyy-MM-dd")"
+                                   asp-route-soNguoiLon="@Model.SoNguoiLon"
+                                   asp-route-soTreEm="@Model.SoTreEm"
+                                   class="btn-book">
+                                    <i class="fas fa-calendar-check me-2"></i>Đặt ngay
+                                </a>
+                                <div class="trust-line"><i class="fas fa-shield-alt me-1"></i>Xác nhận ngay · Thanh toán linh hoạt</div>
+                            }
+                        }
+                        else
+                        {
+                            <button class="btn btn-secondary w-100 py-3 fw-bold rounded-3" disabled>
+                                <i class="fas fa-times-circle me-2"></i>Hết phòng cho khoảng ngày này
+                            </button>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function switchImg(src, el) {
+            var main = document.getElementById('mainImg');
+            if (main) main.src = src;
+            document.querySelectorAll('.gallery-thumb').forEach(t => t.classList.remove('active'));
+            el.classList.add('active');
+        }
+    </script>
+}
