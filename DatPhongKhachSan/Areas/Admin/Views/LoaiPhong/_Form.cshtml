@@ -1,0 +1,86 @@
+@model DatPhongKhachSan.Models.ViewModels.LoaiPhongFormViewModel
+
+<div class="row g-3">
+    <div class="col-md-8">
+        <div class="card shadow-sm border-0 mb-3">
+            <div class="card-header bg-light fw-semibold">Thông tin cơ bản</div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label asp-for="TenLoaiPhong" class="form-label fw-semibold">Tên loại phòng *</label>
+                        <input asp-for="TenLoaiPhong" class="form-control" />
+                        <span asp-validation-for="TenLoaiPhong" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="GiaCoBan" class="form-label fw-semibold">Giá cơ bản/đêm (₫) *</label>
+                        <input name="GiaCoBan" id="GiaCoBan" type="number" class="form-control" step="1"
+                               value="@((long)Model.GiaCoBan)" required />
+                        <span asp-validation-for="GiaCoBan" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-3">
+                        <label asp-for="SucChuaNguoiLon" class="form-label fw-semibold">Người lớn</label>
+                        <input name="SucChuaNguoiLon" id="SucChuaNguoiLon" type="number" class="form-control"
+                               min="1" max="20" value="@Model.SucChuaNguoiLon" />
+                    </div>
+                    <div class="col-md-3">
+                        <label asp-for="SucChuaTreEm" class="form-label fw-semibold">Trẻ em</label>
+                        <input name="SucChuaTreEm" id="SucChuaTreEm" type="number" class="form-control"
+                               min="0" max="10" value="@Model.SucChuaTreEm" />
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="LoaiGiuong" class="form-label fw-semibold">Loại giường</label>
+                        <input asp-for="LoaiGiuong" class="form-control" placeholder="Giường King, Giường đôi..." />
+                    </div>
+                    <div class="col-md-3">
+                        <label asp-for="DienTich" class="form-label fw-semibold">Diện tích (m²)</label>
+                        <input name="DienTich" id="DienTich" type="number" class="form-control" step="0.5"
+                               value="@(Model.DienTich?.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) ?? "")" />
+                    </div>
+                    <div class="col-md-3 d-flex align-items-end">
+                        <div class="form-check mb-2">
+                            <input asp-for="TrangThai" type="checkbox" class="form-check-input" />
+                            <label asp-for="TrangThai" class="form-check-label fw-semibold">Kích hoạt</label>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <label asp-for="MoTa" class="form-label fw-semibold">Mô tả</label>
+                        <textarea asp-for="MoTa" class="form-control" rows="3"></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Upload ảnh mới (nằm trong form Edit) -->
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-light fw-semibold">Upload ảnh mới</div>
+            <div class="card-body">
+                <input type="file" name="FileAnhs" class="form-control" multiple accept="image/*" />
+                <div class="text-muted small mt-1">Chọn nhiều ảnh cùng lúc. Ảnh đầu tiên tự làm ảnh chính nếu chưa có.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TienNghi -->
+    <div class="col-md-4">
+        <div class="card shadow-sm border-0 sticky-top" style="top:75px;">
+            <div class="card-header bg-light fw-semibold">Tiện nghi</div>
+            <div class="card-body" style="max-height:500px;overflow-y:auto;">
+                @foreach (var tn in Model.TatCaTienNghi)
+                {
+                    var checked_ = Model.MaTienNghiChon.Contains(tn.MaTienNghi);
+                    <div class="form-check mb-1">
+                        <input type="checkbox" name="MaTienNghiChon" value="@tn.MaTienNghi"
+                               class="form-check-input" @(checked_ ? "checked" : "") />
+                        <label class="form-check-label small">
+                            @if (!string.IsNullOrEmpty(tn.BieuTuong))
+                            {
+                                <i class="fas @tn.BieuTuong me-1 text-primary"></i>
+                            }
+                            @tn.TenTienNghi
+                        </label>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

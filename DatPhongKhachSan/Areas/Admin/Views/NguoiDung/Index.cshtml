@@ -1,0 +1,226 @@
+@model List<DatPhongKhachSan.Models.ViewModels.NguoiDungAdminViewModel>
+@{
+    ViewData["Title"] = "Quản lý người dùng";
+    var loc = ViewBag.Loc as string;
+    var vaiTroLabel = new Dictionary<string, (string text, string badge)>
+    {
+        ["Admin"]    = ("Admin",      "danger"),
+        ["NhanVien"] = ("Nhân viên",  "primary"),
+        ["KhachHang"]= ("Khách hàng", "success"),
+    };
+}
+
+<div class="container-fluid py-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+        <h2 class="fw-bold mb-0"><i class="fas fa-users me-2 text-primary"></i>Quản lý người dùng</h2>
+        <div class="text-muted small">@Model.Count tài khoản</div>
+    </div>
+
+    <!-- Lọc nhanh -->
+    <div class="d-flex flex-wrap gap-1 mb-3">
+        <a asp-action="Index" class="btn btn-sm @(loc == null ? "btn-dark" : "btn-outline-secondary")">Tất cả</a>
+        <a asp-action="Index" asp-route-loc="Admin"     class="btn btn-sm @(loc=="Admin"    ?"btn-danger":"btn-outline-secondary")">Admin</a>
+        <a asp-action="Index" asp-route-loc="NhanVien"  class="btn btn-sm @(loc=="NhanVien" ?"btn-primary":"btn-outline-secondary")">Nhân viên</a>
+        <a asp-action="Index" asp-route-loc="KhachHang" class="btn btn-sm @(loc=="KhachHang"?"btn-success":"btn-outline-secondary")">Khách hàng</a>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+
+            <!-- ── Mobile cards ──────────────────────────────────── -->
+            <div class="d-md-none p-2 d-flex flex-column gap-2">
+                @foreach (var u in Model)
+                {
+                    var (vtText, vtBadge) = vaiTroLabel.GetValueOrDefault(u.VaiTro, (u.VaiTro, "secondary"));
+                    <div class="card border rounded-3 shadow-sm @(u.IsLocked ? "border-danger border-opacity-50" : "")">
+                        <div class="card-body p-3">
+                            <!-- Dòng trên: avatar + thông tin -->
+                            <div class="d-flex align-items-start gap-3 mb-2">
+                                <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold"
+                                     style="width:42px;height:42px;flex-shrink:0;font-size:.95rem;background:linear-gradient(135deg,#6366f1,#8b5cf6);">
+                                    @(u.HoTen?.Length > 0 ? u.HoTen[0].ToString().ToUpper() : "?")
+                                </div>
+                                <div class="flex-grow-1" style="min-width:0;">
+                                    <div class="fw-semibold text-truncate">@u.HoTen</div>
+                                    <div class="text-muted small text-truncate">@u.Email</div>
+                                    @if (!string.IsNullOrEmpty(u.SoDienThoai))
+                                    {
+                                        <div class="text-muted small">@u.SoDienThoai</div>
+                                    }
+                                    <div class="d-flex flex-wrap gap-1 mt-1">
+                                        <span class="badge bg-@vtBadge" style="font-size:.7rem;">@vtText</span>
+                                        @if (u.IsLocked)
+                                        {
+                                            <span class="badge bg-danger" style="font-size:.7rem;"><i class="fas fa-lock me-1"></i>Đã khóa</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-success" style="font-size:.7rem;"><i class="fas fa-check me-1"></i>Hoạt động</span>
+                                        }
+                                        <span class="badge bg-light text-muted border" style="font-size:.68rem;">@u.NgayTao.ToString("dd/MM/yy")</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Dòng dưới: nút hành động -->
+                            @if (!u.IsCurrentUser)
+                            {
+                                <div class="d-flex flex-wrap gap-2 pt-2 border-top">
+                                    @if (u.IsLocked)
+                                    {
+                                        <form asp-action="MoTaiKhoan" method="post">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="userId" value="@u.UserId" />
+                                            <button type="submit" class="btn btn-outline-success btn-sm">
+                                                <i class="fas fa-lock-open me-1"></i>Mở khóa
+                                            </button>
+                                        </form>
+                                    }
+                                    else
+                                    {
+                                        <form asp-action="KhoaTaiKhoan" method="post"
+                                              data-confirm="Khóa tài khoản @u.Email?">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="userId" value="@u.UserId" />
+                                            <button type="submit" class="btn btn-outline-warning btn-sm">
+                                                <i class="fas fa-lock me-1"></i>Khóa
+                                            </button>
+                                        </form>
+                                    }
+                                    @if (u.VaiTro is "KhachHang" or "NhanVien" or "Admin")
+                                    {
+                                        var roleNew = u.VaiTro == "KhachHang" ? "NhanVien"
+                                                    : u.VaiTro == "Admin"     ? "NhanVien"
+                                                    : "KhachHang";
+                                        var btnStyle = u.VaiTro == "Admin" ? "btn-outline-danger" : "btn-outline-primary";
+                                        <form asp-action="DoiRole" method="post"
+                                              data-confirm="Đổi vai trò @u.Email => @roleNew?">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="userId" value="@u.UserId" />
+                                            <input type="hidden" name="roleHienTai" value="@u.VaiTro" />
+                                            <button type="submit" class="btn @btnStyle btn-sm">
+                                                <i class="fas fa-exchange-alt me-1"></i>=> @roleNew
+                                            </button>
+                                        </form>
+                                    }
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="pt-2 border-top"><span class="text-muted small fst-italic">Đây là tài khoản của bạn</span></div>
+                            }
+                        </div>
+                    </div>
+                }
+                @if (!Model.Any()) { <div class="text-center text-muted py-4 small">Chưa có người dùng nào.</div> }
+            </div>
+
+            <!-- ── Desktop table ──────────────────────────────────── -->
+            <div class="table-responsive d-none d-md-block">
+            <table id="tbl" class="table table-hover align-middle mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Họ tên</th><th>Email</th><th>SĐT</th>
+                        <th>Vai trò</th><th>Trạng thái</th><th>Ngày tạo</th><th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var u in Model)
+                    {
+                        var (vtText, vtBadge) = vaiTroLabel.GetValueOrDefault(u.VaiTro, (u.VaiTro, "secondary"));
+                        <tr class="@(u.IsLocked ? "table-danger" : "")">
+                            <td class="fw-semibold">@u.HoTen</td>
+                            <td class="small">@u.Email</td>
+                            <td class="small">@u.SoDienThoai</td>
+                            <td><span class="badge bg-@vtBadge">@vtText</span></td>
+                            <td>
+                                @if (u.IsLocked)
+                                {
+                                    <span class="badge bg-danger"><i class="fas fa-lock me-1"></i>Đã khóa</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-success"><i class="fas fa-check me-1"></i>Hoạt động</span>
+                                }
+                            </td>
+                            <td class="small text-muted">@u.NgayTao.ToString("dd/MM/yyyy")</td>
+                            <td class="text-end">
+                                @if (!u.IsCurrentUser)
+                                {
+                                    @if (u.IsLocked)
+                                    {
+                                        <form asp-action="MoTaiKhoan" method="post" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="userId" value="@u.UserId" />
+                                            <button type="submit" class="btn btn-outline-success btn-sm me-1" title="Mở khóa">
+                                                <i class="fas fa-lock-open"></i>
+                                            </button>
+                                        </form>
+                                    }
+                                    else
+                                    {
+                                        <form asp-action="KhoaTaiKhoan" method="post" class="d-inline"
+                                              data-confirm="Khóa tài khoản @u.Email?">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="userId" value="@u.UserId" />
+                                            <button type="submit" class="btn btn-outline-warning btn-sm me-1" title="Khóa tài khoản">
+                                                <i class="fas fa-lock"></i>
+                                            </button>
+                                        </form>
+                                    }
+
+                                    @if (u.VaiTro is "KhachHang" or "NhanVien" or "Admin")
+                                    {
+                                        var roleNew = u.VaiTro == "KhachHang" ? "NhanVien"
+                                                    : u.VaiTro == "Admin"     ? "NhanVien"
+                                                    : "KhachHang";
+                                        var btnStyle = u.VaiTro == "Admin" ? "btn-outline-danger" : "btn-outline-primary";
+                                        <form asp-action="DoiRole" method="post" class="d-inline"
+                                              data-confirm="Đổi vai trò @u.Email => @roleNew?">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="userId" value="@u.UserId" />
+                                            <input type="hidden" name="roleHienTai" value="@u.VaiTro" />
+                                            <button type="submit" class="btn @btnStyle btn-sm" title="Đổi => @roleNew">
+                                                <i class="fas fa-exchange-alt me-1"></i>=> @roleNew
+                                            </button>
+                                        </form>
+                                    }
+                                }
+                                else
+                                {
+                                    <span class="text-muted small fst-italic">Bạn</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" />
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    <script>
+        $('#tbl').DataTable({ language: { url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/vi.json' } });
+
+        document.querySelectorAll('form[data-confirm]').forEach(function(form) {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                Swal.fire({
+                    title: 'Xác nhận',
+                    text: this.dataset.confirm,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Đồng ý',
+                    cancelButtonText: 'Hủy',
+                    confirmButtonColor: '#6366f1',
+                    cancelButtonColor: '#94a3b8'
+                }).then(result => { if (result.isConfirmed) HTMLFormElement.prototype.submit.call(this); });
+            });
+        });
+    </script>
+}

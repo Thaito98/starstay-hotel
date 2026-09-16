@@ -1,0 +1,61 @@
+@model DatPhongKhachSan.Models.ViewModels.GiaHanViewModel
+@{
+    ViewData["Title"] = "Gia hạn lưu trú";
+    int sodemHien = Model.NgayTraPhongHien.DayNumber - Model.NgayNhanPhong.DayNumber;
+}
+
+<div class="container py-4" style="max-width:560px;">
+    <h3 class="fw-bold mb-4"><i class="fas fa-calendar-plus me-2 text-primary"></i>Gia hạn lưu trú</h3>
+
+    <div class="card shadow-sm border-0 mb-3">
+        <div class="card-body small">
+            <div class="row g-1">
+                <div class="col-5 text-muted">Đơn</div>
+                <div class="col-7 fw-bold">@Model.MaDon</div>
+                <div class="col-5 text-muted">Khách</div>
+                <div class="col-7">@Model.TenKhach</div>
+                <div class="col-5 text-muted">Nhận phòng</div>
+                <div class="col-7">@Model.NgayNhanPhong.ToString("dd/MM/yyyy")</div>
+                <div class="col-5 text-muted">Trả phòng hiện tại</div>
+                <div class="col-7 fw-semibold text-danger">@Model.NgayTraPhongHien.ToString("dd/MM/yyyy") (@sodemHien đêm)</div>
+                <div class="col-5 text-muted">Tiền hiện tại</div>
+                <div class="col-7">@Model.TongTienHien.ToString("N0") ₫</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body">
+            <form asp-action="GiaHan" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="MaDatPhong" />
+                <input type="hidden" asp-for="MaDon" />
+                <input type="hidden" asp-for="TenKhach" />
+                <input type="hidden" asp-for="NgayNhanPhong" />
+                <input type="hidden" asp-for="NgayTraPhongHien" />
+
+                <div class="mb-3">
+                    <label asp-for="NgayTraPhongMoi" class="form-label fw-semibold">
+                        Ngày trả phòng mới <span class="text-danger">*</span>
+                    </label>
+                    <input asp-for="NgayTraPhongMoi" type="date" class="form-control"
+                           min="@Model.NgayTraPhongHien.ToDateTime(TimeOnly.MinValue).AddDays(1).ToString("yyyy-MM-dd")" />
+                    <span asp-validation-for="NgayTraPhongMoi" class="text-danger small"></span>
+                    <div class="text-muted small mt-1">
+                        Tiền sẽ tự tính lại theo số đêm mới (qua DatPhongService).
+                    </div>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary fw-semibold">
+                        <i class="fas fa-save me-1"></i>Xác nhận gia hạn
+                    </button>
+                    <a asp-action="ChiTietDon" asp-route-id="@Model.MaDatPhong"
+                       class="btn btn-outline-secondary">Hủy</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

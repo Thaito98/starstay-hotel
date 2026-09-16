@@ -1,0 +1,450 @@
+@model (string Tab, object Data)
+@using DatPhongKhachSan.Models.ViewModels
+@{
+    ViewData["Title"] = "Chấm công";
+    var tab = Model.Tab;
+    var chamCongVM = tab == "chamcong" ? Model.Data as ChamCongNgayViewModel : null;
+    var tongHopVM  = tab == "tonghop"  ? Model.Data as TongHopThangViewModel  : null;
+}
+
+<div class="container-fluid py-4">
+    <h2 class="fw-bold mb-4">
+        <i class="fas fa-user-clock me-2 text-primary"></i>Chấm công nhân viên
+    </h2>
+
+    <!-- Tabs -->
+    <ul class="nav nav-tabs mb-4">
+        <li class="nav-item">
+            <a class="nav-link @(tab=="chamcong"?"active":"")"
+               asp-action="Index" asp-route-tab="chamcong"
+               asp-route-ngayCong="@chamCongVM?.NgayCong.ToString("yyyy-MM-dd")">
+                <i class="fas fa-calendar-check me-1"></i>Chấm công theo ngày
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link @(tab=="tonghop"?"active":"")"
+               asp-action="Index" asp-route-tab="tonghop"
+               asp-route-thang="@(tongHopVM?.Thang ?? DateTime.Today.Month)"
+               asp-route-nam="@(tongHopVM?.Nam ?? DateTime.Today.Year)">
+                <i class="fas fa-table me-1"></i>Tổng hợp tháng
+            </a>
+        </li>
+    </ul>
+
+    @if (tab == "chamcong" && chamCongVM != null)
+    {
+        <!-- === TAB CHẤM CÔNG THEO NGÀY === -->
+        <div class="card shadow-sm border-0 mb-3">
+            <div class="card-body">
+                <form method="get" asp-action="Index" class="row g-2 align-items-end">
+                    <input type="hidden" name="tab" value="chamcong" />
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold">Ngày chấm công</label>
+                        <input type="date" name="ngayCong" class="form-control"
+                               value="@chamCongVM.NgayCong.ToString("yyyy-MM-dd")"
+                               max="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                    </div>
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-search me-1"></i>Xem
+                        </button>
+                    </div>
+                    <div class="col text-muted small d-flex align-items-end pb-1">
+                        <i class="fas fa-info-circle me-1"></i>
+                        Chỉ hiện nhân viên đã được xếp ca ngày đó.
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        @if (chamCongVM.ChuaXepCa)
+        {
+            <div class="alert alert-warning">
+                <i class="fas fa-calendar-times me-2"></i>
+                Chưa xếp ca ngày <b>@chamCongVM.NgayCong.ToString("dd/MM/yyyy")</b>.
+                Vào <a asp-controller="PhanCa" asp-action="Index">Xếp ca</a> để phân công trước.
+            </div>
+        }
+        else if (chamCongVM.DanhSach.Any())
+        {
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-light fw-semibold">
+                    Ngày <b>@chamCongVM.NgayCong.ToString("dddd, dd/MM/yyyy")</b>
+                    - @chamCongVM.DanhSach.Count nhân viên có ca
+                    @{
+                        int soDaCham = chamCongVM.DanhSach.Count(x => x.DaChamCong);
+                    }
+                    @if (soDaCham > 0)
+                    {
+                        <span class="badge bg-success ms-2">@soDaCham/@chamCongVM.DanhSach.Count đã chấm</span>
+                    }
+                </div>
+                <div class="card-body p-0">
+                    <form asp-action="Luu" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="ngayCong" value="@chamCongVM.NgayCong.ToString("yyyy-MM-dd")" />
+
+                        <!-- Hidden inputs dùng chung (không bị duplicate) -->
+                        @for (int i = 0; i < chamCongVM.DanhSach.Count; i++)
+                        {
+                            <input type="hidden" name="danhSach[@i].MaNguoiDung" value="@chamCongVM.DanhSach[i].MaNguoiDung" />
+                        }
+
+                        <!-- ── Mobile cards ──────────────────────────────────── -->
+                        <div class="d-md-none p-2 d-flex flex-column gap-2" id="chamcongMobile">
+                            @for (int i = 0; i < chamCongVM.DanhSach.Count; i++)
+                            {
+                                var item = chamCongVM.DanhSach[i];
+                                var badgeMb = item.TrangThai switch { "DiLam"=>"success","Tre"=>"warning","Vang"=>"danger",_=>"secondary" };
+                                var labelMb = item.TrangThai switch { "DiLam"=>"Đi làm","Tre"=>$"Trễ {item.SoPhutTre}p","Vang"=>"Vắng",_=>"Chưa chấm" };
+                                <div class="card border rounded-3 shadow-sm @(item.DaChamCong ? "border-success border-opacity-25" : "")">
+                                    <div class="card-body p-3">
+                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                            <div>
+                                                <div class="fw-semibold">@item.HoTen</div>
+                                                <div class="text-muted small">@item.TenCa @item.GioLamViec</div>
+                                            </div>
+                                            @if (item.DaChamCong)
+                                            {
+                                                <span class="badge bg-@badgeMb">@labelMb</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-secondary">Chưa chấm</span>
+                                            }
+                                        </div>
+                                        <div class="d-flex gap-3 align-items-center mb-2">
+                                            <label class="d-flex align-items-center gap-1 small">
+                                                <input type="radio" name="danhSach[@i].TrangThai" value="DiLam"
+                                                       class="form-check-input radio-mb" data-mbidx="@i"
+                                                       @(item.TrangThai == "DiLam" ? "checked" : "") />
+                                                Đi làm
+                                            </label>
+                                            <label class="d-flex align-items-center gap-1 small">
+                                                <input type="radio" name="danhSach[@i].TrangThai" value="Tre"
+                                                       class="form-check-input radio-mb" data-mbidx="@i"
+                                                       @(item.TrangThai == "Tre" ? "checked" : "") />
+                                                Trễ
+                                            </label>
+                                            <label class="d-flex align-items-center gap-1 small">
+                                                <input type="radio" name="danhSach[@i].TrangThai" value="Vang"
+                                                       class="form-check-input radio-mb" data-mbidx="@i"
+                                                       @(item.TrangThai == "Vang" ? "checked" : "") />
+                                                Vắng
+                                            </label>
+                                        </div>
+                                        <div id="phutTreBoxMb_@i" @(item.TrangThai == "Tre" ? "" : "style=\"display:none;\"")>
+                                            <input type="number" name="danhSach[@i].SoPhutTre"
+                                                   class="form-control form-control-sm" style="width:140px;"
+                                                   min="1" max="480"
+                                                   value="@(item.SoPhutTre > 0 ? item.SoPhutTre : "")"
+                                                   placeholder="Số phút trễ" />
+                                        </div>
+                                        <input type="hidden" id="phutTreHiddenMb_@i"
+                                               name="danhSach[@i].SoPhutTre"
+                                               value="@item.SoPhutTre"
+                                               @(item.TrangThai == "Tre" ? "style=\"display:none;\"" : "") />
+                                    </div>
+                                </div>
+                            }
+                        </div>
+
+                        <!-- ── Desktop table ──────────────────────────────────── -->
+                        <div class="table-responsive d-none d-md-block" id="chamcongDesktop">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Nhân viên</th><th>Ca làm việc</th>
+                                    <th class="text-center">Đi làm</th>
+                                    <th class="text-center">Trễ</th>
+                                    <th class="text-center">Vắng</th>
+                                    <th>Số phút trễ</th>
+                                    <th>Trạng thái</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @for (int i = 0; i < chamCongVM.DanhSach.Count; i++)
+                                {
+                                    var item = chamCongVM.DanhSach[i];
+                                    <tr class="@(item.DaChamCong ? "table-light" : "")">
+                                        <td>
+                                            <span class="fw-semibold">@item.HoTen</span>
+                                        </td>
+                                        <td class="small text-muted">
+                                            @item.TenCa
+                                            @if (!string.IsNullOrEmpty(item.GioLamViec))
+                                            {
+                                                <br /><span style="font-size:11px;">@item.GioLamViec</span>
+                                            }
+                                        </td>
+                                        <td class="text-center">
+                                            <input type="radio" name="danhSach[@i].TrangThai" value="DiLam"
+                                                   class="form-check-input radio-trangThai" data-idx="@i"
+                                                   @(item.TrangThai == "DiLam" ? "checked" : "") />
+                                        </td>
+                                        <td class="text-center">
+                                            <input type="radio" name="danhSach[@i].TrangThai" value="Tre"
+                                                   class="form-check-input radio-trangThai" data-idx="@i"
+                                                   @(item.TrangThai == "Tre" ? "checked" : "") />
+                                        </td>
+                                        <td class="text-center">
+                                            <input type="radio" name="danhSach[@i].TrangThai" value="Vang"
+                                                   class="form-check-input radio-trangThai" data-idx="@i"
+                                                   @(item.TrangThai == "Vang" ? "checked" : "") />
+                                        </td>
+                                        <td>
+                                            <div id="phutTreBox_@i"
+                                                 style="@(item.TrangThai == "Tre" ? "" : "display:none;")">
+                                                <input type="number" name="danhSach[@i].SoPhutTre"
+                                                       class="form-control form-control-sm"
+                                                       style="width:80px;"
+                                                       min="1" max="480"
+                                                       value="@(item.SoPhutTre > 0 ? item.SoPhutTre : "")"
+                                                       placeholder="phút" />
+                                            </div>
+                                            <input type="hidden" name="danhSach[@i].SoPhutTre"
+                                                   id="phutTreHidden_@i"
+                                                   value="@item.SoPhutTre"
+                                                   style="@(item.TrangThai == "Tre" ? "display:none;" : "")" />
+                                        </td>
+                                        <td>
+                                            @if (item.DaChamCong)
+                                            {
+                                                var badge = item.TrangThai switch
+                                                {
+                                                    "DiLam" => "success",
+                                                    "Tre"   => "warning",
+                                                    "Vang"  => "danger",
+                                                    _       => "secondary"
+                                                };
+                                                var label = item.TrangThai switch
+                                                {
+                                                    "DiLam" => "Đi làm",
+                                                    "Tre"   => $"Trễ {item.SoPhutTre}p",
+                                                    "Vang"  => "Vắng",
+                                                    _       => item.TrangThai
+                                                };
+                                                <span class="badge bg-@badge small">@label</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted small">Chưa chấm</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                        </div>
+
+                        <div class="p-3 border-top bg-light">
+                            <button type="submit" class="btn btn-success fw-semibold">
+                                <i class="fas fa-save me-1"></i>Lưu chấm công
+                            </button>
+                            <span class="text-muted small ms-3">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Trễ vẫn tính 1.0 công - chỉ ghi nhận phút trễ để tổng hợp lương.
+                            </span>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        }
+    }
+    else if (tab == "tonghop" && tongHopVM != null)
+    {
+        <!-- === TAB TỔNG HỢP THÁNG === -->
+        <div class="card shadow-sm border-0 mb-3">
+            <div class="card-body">
+                <form method="get" asp-action="Index" class="row g-2 align-items-end">
+                    <input type="hidden" name="tab" value="tonghop" />
+                    <div class="col-md-2">
+                        <label class="form-label fw-semibold">Tháng</label>
+                        <select name="thang" class="form-select">
+                            @for (int m = 1; m <= 12; m++)
+                            {
+                                <option value="@m" selected="@(tongHopVM.Thang == m ? "selected" : null)">Tháng @m</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-semibold">Năm</label>
+                        <input type="number" name="nam" class="form-control"
+                               value="@tongHopVM.Nam" min="2020" max="2099" />
+                    </div>
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-search me-1"></i>Xem
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        @if (!tongHopVM.DanhSach.Any())
+        {
+            <div class="alert alert-info">
+                Chưa có dữ liệu chấm công tháng @tongHopVM.Thang/@tongHopVM.Nam.
+            </div>
+        }
+        else
+        {
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-light fw-semibold">
+                    Tổng hợp tháng @tongHopVM.Thang/@tongHopVM.Nam
+                    - @tongHopVM.DanhSach.Count nhân viên
+                </div>
+
+                <!-- ── Mobile cards ──────────────────────────────────── -->
+                <div class="d-md-none p-2 d-flex flex-column gap-2">
+                    @foreach (var nv in tongHopVM.DanhSach)
+                    {
+                        <div class="card border rounded-3 shadow-sm">
+                            <div class="card-body p-3">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="fw-semibold">@nv.HoTen</span>
+                                    <span class="fw-bold text-primary fs-5">@nv.TongCong.ToString("F1") công</span>
+                                </div>
+                                <div class="d-flex flex-wrap gap-2">
+                                    <span class="badge bg-success">@nv.SoNgayDiLam ngày đi làm</span>
+                                    @if (nv.SoLanTre > 0)
+                                    {
+                                        <span class="badge bg-warning text-dark">@nv.SoLanTre lần trễ (@nv.TongPhutTre phút)</span>
+                                    }
+                                    @if (nv.SoNgayVang > 0)
+                                    {
+                                        <span class="badge bg-danger">@nv.SoNgayVang ngày vắng</span>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
+                    <div class="card border rounded-3 bg-light fw-bold">
+                        <div class="card-body p-3">
+                            <div class="d-flex justify-content-between">
+                                <span>Tổng cộng</span>
+                                <span class="text-primary">@tongHopVM.DanhSach.Sum(x=>x.TongCong).ToString("F1") công</span>
+                            </div>
+                            <div class="small text-muted mt-1">
+                                @tongHopVM.DanhSach.Sum(x=>x.SoNgayDiLam) ngày đi làm •
+                                @tongHopVM.DanhSach.Sum(x=>x.SoLanTre) lần trễ •
+                                @tongHopVM.DanhSach.Sum(x=>x.SoNgayVang) ngày vắng
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ── Desktop table ──────────────────────────────────── -->
+                <div class="table-responsive d-none d-md-block">
+                    <table id="tblTongHop" class="table table-hover align-middle mb-0">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Nhân viên</th>
+                                <th class="text-center">Tổng công</th>
+                                <th class="text-center">Đi làm</th>
+                                <th class="text-center">Số lần trễ</th>
+                                <th class="text-center">Tổng phút trễ</th>
+                                <th class="text-center">Vắng</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var nv in tongHopVM.DanhSach)
+                            {
+                                <tr>
+                                    <td class="fw-semibold">@nv.HoTen</td>
+                                    <td class="text-center fw-bold text-primary">@nv.TongCong.ToString("F1")</td>
+                                    <td class="text-center">
+                                        <span class="badge bg-success">@nv.SoNgayDiLam ngày</span>
+                                    </td>
+                                    <td class="text-center">
+                                        @if (nv.SoLanTre > 0)
+                                        {
+                                            <span class="badge bg-warning text-dark">@nv.SoLanTre lần</span>
+                                        }
+                                        else { <span class="text-muted">0</span> }
+                                    </td>
+                                    <td class="text-center">
+                                        @if (nv.TongPhutTre > 0)
+                                        {
+                                            <span class="text-warning fw-semibold">@nv.TongPhutTre phút</span>
+                                        }
+                                        else { <span class="text-muted">0</span> }
+                                    </td>
+                                    <td class="text-center">
+                                        @if (nv.SoNgayVang > 0)
+                                        {
+                                            <span class="badge bg-danger">@nv.SoNgayVang ngày</span>
+                                        }
+                                        else { <span class="text-muted">0</span> }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                        <tfoot class="table-light fw-bold">
+                            <tr>
+                                <td>Tổng</td>
+                                <td class="text-center text-primary">@tongHopVM.DanhSach.Sum(x=>x.TongCong).ToString("F1")</td>
+                                <td class="text-center">@tongHopVM.DanhSach.Sum(x=>x.SoNgayDiLam)</td>
+                                <td class="text-center">@tongHopVM.DanhSach.Sum(x=>x.SoLanTre)</td>
+                                <td class="text-center">@tongHopVM.DanhSach.Sum(x=>x.TongPhutTre) phút</td>
+                                <td class="text-center">@tongHopVM.DanhSach.Sum(x=>x.SoNgayVang)</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        }
+    }
+</div>
+
+@section Scripts {
+    <script>
+        // ── Desktop: ẩn/hiện ô phút trễ theo radio ──────────────────────────────
+        document.querySelectorAll('.radio-trangThai').forEach(radio => {
+            radio.addEventListener('change', function () {
+                const idx    = this.dataset.idx;
+                const box    = document.getElementById('phutTreBox_' + idx);
+                const hidden = document.getElementById('phutTreHidden_' + idx);
+                if (this.value === 'Tre') {
+                    box.style.display    = 'block';
+                    if (hidden) hidden.style.display = 'none';
+                } else {
+                    box.style.display    = 'none';
+                    if (hidden) hidden.style.display = '';
+                }
+            });
+        });
+
+        // ── Mobile: ẩn/hiện ô phút trễ theo radio ───────────────────────────────
+        document.querySelectorAll('.radio-mb').forEach(radio => {
+            radio.addEventListener('change', function () {
+                const idx    = this.dataset.mbidx;
+                const box    = document.getElementById('phutTreBoxMb_' + idx);
+                const hidden = document.getElementById('phutTreHiddenMb_' + idx);
+                if (this.value === 'Tre') {
+                    box.style.display    = 'block';
+                    if (hidden) hidden.style.display = 'none';
+                } else {
+                    box.style.display    = 'none';
+                    if (hidden) hidden.style.display = '';
+                }
+            });
+        });
+
+        // ── Disable inputs của section ẩn để tránh submit trùng ────────────────
+        function syncChamCong() {
+            var mobile  = document.getElementById('chamcongMobile');
+            var desktop = document.getElementById('chamcongDesktop');
+            if (!mobile || !desktop) return;
+            var isMobile = window.innerWidth < 768;
+            mobile.querySelectorAll('input:not([type=hidden]), select').forEach(function(el) {
+                el.disabled = !isMobile;
+            });
+            desktop.querySelectorAll('input:not([type=hidden]), select').forEach(function(el) {
+                el.disabled = isMobile;
+            });
+        }
+        syncChamCong();
+        window.addEventListener('resize', syncChamCong);
+    </script>
+}

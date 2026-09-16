@@ -1,0 +1,350 @@
+@model DatPhongKhachSan.Models.ViewModels.DatWalkInViewModel
+@{
+    ViewData["Title"] = "Đặt phòng Walk-in";
+    // Serialize dữ liệu phòng cho JS
+    var roomsJson = System.Text.Json.JsonSerializer.Serialize(
+        Model.DanhSachPhong.Select(p => new {
+            maPhong     = p.MaPhong,
+            soPhong     = p.SoPhong,
+            tang        = p.Tang,
+            maLoaiPhong = p.MaLoaiPhong,
+            gia         = p.MaLoaiPhongNavigation?.GiaCoBan ?? 0
+        })
+    );
+    var typePricesJson = System.Text.Json.JsonSerializer.Serialize(
+        Model.DanhSachLoaiPhong.ToDictionary(l => l.MaLoaiPhong, l => l.GiaCoBan)
+    );
+}
+
+<div class="container py-4" style="max-width:860px;">
+    <h2 class="fw-bold mb-4"><i class="fas fa-walking me-2 text-success"></i>Đặt phòng Walk-in</h2>
+
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div class="alert alert-danger">
+            @foreach (var err in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+            { <div>@err.ErrorMessage</div> }
+        </div>
+    }
+
+    <form asp-action="DatWalkIn" method="post">
+        @Html.AntiForgeryToken()
+        <div class="row g-3">
+            <!-- Thông tin khách -->
+            <div class="col-md-6">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-light fw-semibold">
+                        <i class="fas fa-user me-1 text-primary"></i>Thông tin khách
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label asp-for="HoTen" class="form-label fw-semibold">
+                                Họ tên <span class="text-danger">*</span>
+                            </label>
+                            <input asp-for="HoTen" class="form-control" placeholder="Họ và tên đầy đủ" />
+                            <span asp-validation-for="HoTen" class="text-danger small"></span>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="SoDienThoai" class="form-label fw-semibold">Số điện thoại</label>
+                            <input asp-for="SoDienThoai" class="form-control" placeholder="0901234567" />
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="CCCD" class="form-label fw-semibold">CCCD / Hộ chiếu</label>
+                            <input asp-for="CCCD" class="form-control" placeholder="Số CCCD" />
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="GhiChu" class="form-label fw-semibold">Ghi chú</label>
+                            <textarea asp-for="GhiChu" class="form-control" rows="2"></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Thông tin phòng -->
+            <div class="col-md-6">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-light fw-semibold">
+                        <i class="fas fa-bed me-1 text-primary"></i>Chọn phòng & ngày
+                    </div>
+                    <div class="card-body">
+                        <!-- Loại phòng -->
+                        <div class="mb-3">
+                            <label asp-for="MaLoaiPhong" class="form-label fw-semibold">Loại phòng</label>
+                            <select asp-for="MaLoaiPhong" id="MaLoaiPhong" class="form-select">
+                                <option value="0">-- Tất cả loại --</option>
+                                @foreach (var lp in Model.DanhSachLoaiPhong)
+                                {
+                                    <option value="@lp.MaLoaiPhong">
+                                        @lp.TenLoaiPhong - @lp.GiaCoBan.ToString("N0") ₫/đêm
+                                    </option>
+                                }
+                            </select>
+                        </div>
+
+                        <!-- Số phòng cụ thể -->
+                        <div class="mb-3">
+                            <label asp-for="MaPhong" class="form-label fw-semibold">
+                                Số phòng <span class="text-danger">*</span>
+                            </label>
+                            <select asp-for="MaPhong" id="MaPhong" class="form-select">
+                                <option value="">-- Chọn số phòng --</option>
+                                @foreach (var p in Model.DanhSachPhong)
+                                {
+                                    <option value="@p.MaPhong"
+                                            data-loai="@p.MaLoaiPhong"
+                                            data-gia="@p.MaLoaiPhongNavigation?.GiaCoBan">
+                                        Phòng @p.SoPhong (Tầng @p.Tang
+                                        - @p.MaLoaiPhongNavigation?.TenLoaiPhong)
+                                    </option>
+                                }
+                            </select>
+                            <span asp-validation-for="MaPhong" class="text-danger small"></span>
+                        </div>
+
+                        <!-- Ngày -->
+                        <div class="row g-2 mb-3">
+                            <div class="col-6">
+                                <label asp-for="NgayNhanPhong" class="form-label fw-semibold">
+                                    Nhận phòng <span class="text-danger">*</span>
+                                </label>
+                                <input asp-for="NgayNhanPhong" id="NgayNhan" type="date"
+                                       class="form-control" />
+                            </div>
+                            <div class="col-6">
+                                <label asp-for="NgayTraPhong" class="form-label fw-semibold">
+                                    Trả phòng <span class="text-danger">*</span>
+                                </label>
+                                <input asp-for="NgayTraPhong" id="NgayTra" type="date"
+                                       class="form-control" />
+                            </div>
+                        </div>
+                        <div class="row g-2 mb-2">
+                            <div class="col-6">
+                                <label asp-for="SoNguoiLon" class="form-label fw-semibold">Người lớn</label>
+                                <select asp-for="SoNguoiLon" class="form-select">
+                                    @for (int i = 1; i <= 6; i++) { <option value="@i">@i</option> }
+                                </select>
+                            </div>
+                            <div class="col-6">
+                                <label asp-for="SoTreEm" class="form-label fw-semibold">Trẻ em</label>
+                                <select asp-for="SoTreEm" class="form-select">
+                                    @for (int i = 0; i <= 4; i++) { <option value="@i">@i</option> }
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Số đêm + tóm tắt tiền -->
+                        <div class="alert alert-info py-2 small mb-0" id="tinhTienBox" style="display:none;">
+                            <i class="fas fa-calculator me-1"></i>
+                            <span id="sodemText"></span> đêm × <span id="giaText"></span> ₫ = <b id="tienPhongText"></b> ₫
+                            <span id="dvSummary" style="display:none;">
+                                &nbsp;+&nbsp;<span id="tienDvText"></span> ₫ (DV)
+                            </span>
+                            &nbsp;=> Tổng: <b id="tongTienText" class="text-primary"></b> ₫
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dịch vụ thêm -->
+            @if (Model.DichVuChon.Any())
+            {
+                <div class="col-12">
+                    <div class="card shadow-sm border-0">
+                        <div class="card-header bg-light fw-semibold">
+                            <i class="fas fa-concierge-bell me-1 text-primary"></i>Dịch vụ thêm <span class="text-muted fw-normal small">(tùy chọn)</span>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                @for (int i = 0; i < Model.DichVuChon.Count; i++)
+                                {
+                                    var dv = Model.DichVuChon[i];
+                                    <div class="col-md-4 col-6">
+                                        <input type="hidden" name="DichVuChon[@i].MaDichVu" value="@dv.MaDichVu" />
+                                        <div class="border rounded p-2 text-center position-relative dv-card">
+                                            <div class="fw-semibold small">@dv.TenDichVu</div>
+                                            <div class="text-muted small mb-2">@dv.Gia.ToString("N0") ₫/@(dv.DonVi ?? "lần")</div>
+                                            <div class="d-flex align-items-center justify-content-center gap-1">
+                                                <button type="button" class="btn btn-sm btn-outline-secondary dv-minus-wi" style="width:30px;padding:0">−</button>
+                                                <input type="number" name="DichVuChon[@i].SoLuong"
+                                                       class="form-control form-control-sm text-center dv-qty-wi"
+                                                       style="width:50px"
+                                                       value="0" min="0" max="99"
+                                                       data-gia="@dv.Gia" readonly />
+                                                <button type="button" class="btn btn-sm btn-outline-primary dv-plus-wi" style="width:30px;padding:0">+</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- Thanh toán -->
+            <div class="col-12">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-light fw-semibold">
+                        <i class="fas fa-money-bill me-1 text-primary"></i>Thanh toán tại quầy
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3 align-items-end">
+                            <div class="col-md-4">
+                                <label asp-for="SoTienThu" class="form-label fw-semibold">Số tiền thu</label>
+                                <div class="input-group">
+                                    <input name="SoTienThu" id="SoTienThu" type="number"
+                                           class="form-control" step="1" value="0" />
+                                    <span class="input-group-text">₫</span>
+                                </div>
+                                <div class="text-muted small mt-1">Tự động tính theo phòng + ngày. Để 0 nếu chưa thu.</div>
+                            </div>
+                            <div class="col-md-3">
+                                <label asp-for="PhuongThuc" class="form-label fw-semibold">Phương thức</label>
+                                <select asp-for="PhuongThuc" class="form-select">
+                                    <option value="TienMat">Tiền mặt</option>
+                                    <option value="ChuyenKhoan">Chuyển khoản</option>
+                                </select>
+                            </div>
+                            <div class="col-md-5">
+                                <div class="form-check mt-3">
+                                    <input asp-for="CheckInNgay" type="checkbox" class="form-check-input" />
+                                    <label asp-for="CheckInNgay" class="form-check-label fw-semibold">
+                                        Check-in ngay (khách ở luôn hôm nay)
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 d-flex gap-2">
+                <button type="submit" class="btn btn-success">
+                    <i class="fas fa-save me-1"></i>Tạo đơn walk-in
+                </button>
+                <a asp-action="TraCuuDon" class="btn btn-outline-secondary">Hủy</a>
+            </div>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        const allRooms   = @Html.Raw(roomsJson);
+        const typePrices = @Html.Raw(typePricesJson);
+
+        const maLoaiPhongSel = document.getElementById('MaLoaiPhong');
+        const maPhongSel     = document.getElementById('MaPhong');
+        const ngayNhanInput  = document.getElementById('NgayNhan');
+        const ngayTraInput   = document.getElementById('NgayTra');
+        const soTienInput    = document.getElementById('SoTienThu');
+
+        const fmt = n => new Intl.NumberFormat('vi-VN').format(Math.round(n));
+
+        function tinhTongDV() {
+            let total = 0;
+            document.querySelectorAll('.dv-qty-wi').forEach(el => {
+                total += parseFloat(el.dataset.gia) * parseInt(el.value || '0');
+            });
+            return total;
+        }
+
+        function getGiaPhong() {
+            // Ưu tiên: phòng cụ thể được chọn => loại phòng => 0
+            const selOpt = maPhongSel.options[maPhongSel.selectedIndex];
+            const giaPhong = selOpt ? (parseFloat(selOpt.dataset.gia) || 0) : 0;
+            if (giaPhong > 0) return giaPhong;
+            const typeId = parseInt(maLoaiPhongSel.value) || 0;
+            return typeId > 0 ? (typePrices[typeId] || 0) : 0;
+        }
+
+        function filterRooms() {
+            const typeId  = parseInt(maLoaiPhongSel.value) || 0;
+            const prevVal = maPhongSel.value;
+
+            while (maPhongSel.options.length > 1) maPhongSel.remove(1);
+
+            const filtered = allRooms.filter(r => typeId === 0 || r.maLoaiPhong === typeId);
+            filtered.forEach(r => {
+                const opt = document.createElement('option');
+                opt.value       = r.maPhong;
+                opt.dataset.gia = r.gia;
+                opt.textContent = `Phòng ${r.soPhong} (Tầng ${r.tang})`;
+                maPhongSel.appendChild(opt);
+            });
+
+            if ([...maPhongSel.options].some(o => o.value == prevVal))
+                maPhongSel.value = prevVal;
+            else if (filtered.length === 1)
+                maPhongSel.value = filtered[0].maPhong; // auto-select nếu chỉ có 1 phòng
+        }
+
+        function tinhTien() {
+            const d1 = new Date(ngayNhanInput.value);
+            const d2 = new Date(ngayTraInput.value);
+            if (!ngayNhanInput.value || !ngayTraInput.value || d2 <= d1) {
+                document.getElementById('tinhTienBox').style.display = 'none';
+                return;
+            }
+
+            const sodem = Math.round((d2 - d1) / 86400000);
+            const gia   = getGiaPhong();
+
+            if (gia === 0 || sodem <= 0) {
+                document.getElementById('tinhTienBox').style.display = 'none';
+                return;
+            }
+
+            const tienPhong = sodem * gia;
+            const dvTotal   = tinhTongDV();
+            const tong      = tienPhong + dvTotal;
+
+            document.getElementById('sodemText').textContent     = sodem;
+            document.getElementById('giaText').textContent       = fmt(gia);
+            document.getElementById('tienPhongText').textContent = fmt(tienPhong);
+            document.getElementById('tongTienText').textContent  = fmt(tong);
+            document.getElementById('tinhTienBox').style.display = 'block';
+
+            const dvSummary = document.getElementById('dvSummary');
+            if (dvTotal > 0) {
+                document.getElementById('tienDvText').textContent = fmt(dvTotal);
+                dvSummary.style.display = 'inline';
+            } else {
+                dvSummary.style.display = 'none';
+            }
+
+            if (!soTienInput.dataset.manual) {
+                soTienInput.value = tong;
+            }
+        }
+
+        soTienInput.addEventListener('input', function () { this.dataset.manual = '1'; });
+
+        document.querySelectorAll('.dv-plus-wi').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const input = this.previousElementSibling;
+                input.value = parseInt(input.value || 0) + 1;
+                tinhTien();
+            });
+        });
+
+        document.querySelectorAll('.dv-minus-wi').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const input = this.nextElementSibling;
+                const v = parseInt(input.value || 0);
+                if (v > 0) { input.value = v - 1; tinhTien(); }
+            });
+        });
+
+        maLoaiPhongSel.addEventListener('change', () => { filterRooms(); tinhTien(); });
+        maPhongSel.addEventListener('change', tinhTien);
+        ngayNhanInput.addEventListener('change', tinhTien);
+        ngayTraInput.addEventListener('change', tinhTien);
+
+        // Khởi tạo: filterRooms trước, rồi tinhTien dùng giá loại phòng
+        filterRooms();
+        tinhTien();
+    </script>
+}

@@ -1,0 +1,132 @@
+@model List<DatPhongKhachSan.Models.ViewModels.LichSuDonViewModel>
+@{
+    ViewData["Title"] = "Lịch sử đặt phòng";
+}
+
+<div class="container py-4">
+    <h2 class="fw-bold mb-4"><i class="fas fa-history me-2 text-primary"></i>Lịch sử đặt phòng</h2>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show">
+            <i class="fas fa-check-circle me-2"></i>@TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show">
+            @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (!Model.Any())
+    {
+        <div class="alert alert-info text-center py-5">
+            <i class="fas fa-inbox fa-3x mb-3 d-block text-secondary"></i>
+            Bạn chưa có đơn đặt phòng nào.
+            <div class="mt-3">
+                <a asp-controller="Phong" asp-action="Index" class="btn btn-primary">
+                    <i class="fas fa-search me-1"></i>Tìm phòng ngay
+                </a>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="d-flex flex-column gap-3">
+            @foreach (var d in Model)
+            {
+                var badgeClass = d.TrangThai switch
+                {
+                    "ChoXacNhan"  => "warning",
+                    "DaXacNhan"   => "primary",
+                    "DangO"       => "success",
+                    "DaTraPhong"  => "secondary",
+                    "ChoHoanTien" => "info",
+                    "DaHuy"       => "danger",
+                    _             => "secondary"
+                };
+                // ChoXacNhan ở đây = đơn online chưa hoàn thành VNPay
+                var trangThaiText = d.TrangThai switch
+                {
+                    "ChoXacNhan"  => "Chờ thanh toán",
+                    "DaXacNhan"   => "Đã xác nhận",
+                    "DangO"       => "Đang ở",
+                    "DaTraPhong"  => "Đã trả phòng",
+                    "ChoHoanTien" => "Chờ hoàn tiền",
+                    "DaHuy"       => "Đã hủy",
+                    _             => d.TrangThai
+                };
+
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-md-3">
+                                <div class="fw-bold text-primary">@d.MaDon</div>
+                                <div class="text-muted small">@d.NgayDat.ToString("dd/MM/yyyy HH:mm")</div>
+                                <span class="badge bg-@badgeClass mt-1">@trangThaiText</span>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="fw-semibold">@d.TenLoaiPhong</div>
+                                <div class="text-muted small">
+                                    <i class="fas fa-door-open me-1"></i>Phòng @d.SoPhong
+                                </div>
+                                <div class="text-muted small">
+                                    <i class="fas fa-calendar me-1"></i>
+                                    @d.NgayNhanPhong.ToString("dd/MM") => @d.NgayTraPhong.ToString("dd/MM/yyyy")
+                                    (@d.SoDem đêm)
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-muted small">Tổng tiền</div>
+                                <div class="fw-bold text-primary">@d.TongTien.ToString("N0") ₫</div>
+                                @if (d.ConLai > 0 && d.TrangThai is "DaXacNhan" or "DangO")
+                                {
+                                    <div class="text-warning small">
+                                        Còn cần trả: @d.ConLai.ToString("N0") ₫
+                                    </div>
+                                }
+                                @if (d.TrangThai == "ChoHoanTien" && d.TiLeHoan > 0)
+                                {
+                                    <div class="text-info small">
+                                        Hoàn @d.TiLeHoan%: ~@((d.DaTra * d.TiLeHoan / 100).ToString("N0")) ₫
+                                    </div>
+                                }
+                            </div>
+                            <div class="col-md-2 text-end">
+                                @if (d.CoTheHuy)
+                                {
+                                    <form asp-action="HuyDon" method="post" class="d-inline"
+                                          data-confirm="Bạn chắc chắn muốn hủy đơn @d.MaDon? @(d.TiLeHoan < 100 ? $"Chính sách hoàn tiền: {d.TiLeHoan}%" : "Hoàn 100% tiền cọc")">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="maDatPhong" value="@d.MaDatPhong" />
+                                        <button type="submit" class="btn btn-outline-danger btn-sm">
+                                            <i class="fas fa-times me-1"></i>Hủy đơn
+                                        </button>
+                                    </form>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+    <script>
+        document.querySelectorAll('[data-confirm]').forEach(f => {
+            f.addEventListener('submit', e => {
+                e.preventDefault();
+                Swal.fire({ title: 'Xác nhận hủy đơn', text: f.dataset.confirm, icon: 'warning',
+                    showCancelButton: true, confirmButtonText: 'Hủy đơn', cancelButtonText: 'Giữ lại',
+                    confirmButtonColor: '#dc3545'
+                }).then(r => { if (r.isConfirmed) f.submit(); });
+            });
+        });
+    </script>
+}

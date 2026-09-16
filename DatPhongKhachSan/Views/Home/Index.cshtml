@@ -1,0 +1,678 @@
+@model List<DatPhongKhachSan.Models.ViewModels.LoaiPhongCardViewModel>
+@using DatPhongKhachSan.Models.Entities
+@{
+    ViewData["Title"] = "StarStay Hotel - Đà Nẵng";
+    var dichVus = ViewBag.DichVus as List<DichVu> ?? new List<DichVu>();
+}
+
+<style>
+    /* ── Reset padding-top cho hero full-bleed ─────────────── */
+    main { padding-top: 0 !important; }
+
+    /* ── Hero ─────────────────────────────────────────────── */
+    .hero-wrap {
+        position: relative; min-height: 92vh;
+        background: linear-gradient(135deg, #0c1f3a 0%, #0f4c81 40%, #136ba3 70%, #0a7a6e 100%);
+        display: flex; flex-direction: column;
+        align-items: center; justify-content: center;
+        overflow: hidden;
+    }
+    .hero-blob-1 {
+        position: absolute; width: 560px; height: 560px;
+        background: rgba(255,255,255,.04); border-radius: 50%;
+        top: -160px; right: -120px; pointer-events: none;
+    }
+    .hero-blob-2 {
+        position: absolute; width: 380px; height: 380px;
+        background: rgba(10,122,110,.18); border-radius: 50%;
+        bottom: -100px; left: -80px; pointer-events: none;
+    }
+    .hero-blob-3 {
+        position: absolute; width: 200px; height: 200px;
+        background: rgba(255,255,255,.03); border-radius: 50%;
+        bottom: 60px; right: 120px; pointer-events: none;
+    }
+    .hero-dots {
+        position: absolute; inset: 0; pointer-events: none;
+        background-image: radial-gradient(rgba(255,255,255,.08) 1px, transparent 1px);
+        background-size: 40px 40px;
+    }
+    .hero-wave {
+        position: absolute; bottom: 0; left: 0; right: 0;
+        height: 80px; overflow: hidden;
+    }
+    .hero-wave svg { width: 100%; height: 100%; }
+
+    .hero-content { position: relative; z-index: 2; text-align: center; padding: 0 16px; }
+    .hero-badge {
+        display: inline-flex; align-items: center; gap: 6px;
+        background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.2);
+        color: #fde68a; font-size: .78rem; font-weight: 600;
+        padding: 6px 16px; border-radius: 99px; letter-spacing: .05em;
+        margin-bottom: 20px; backdrop-filter: blur(8px);
+    }
+    .hero-title {
+        font-size: clamp(2rem, 6vw, 3.8rem);
+        font-weight: 900; color: #fff; line-height: 1.1;
+        margin-bottom: 16px; text-shadow: 0 2px 20px rgba(0,0,0,.3);
+    }
+    .hero-title span { color: #67e8f9; }
+    .hero-sub {
+        font-size: clamp(.95rem, 2.5vw, 1.15rem);
+        color: rgba(255,255,255,.75); margin-bottom: 36px;
+        max-width: 560px; margin-left: auto; margin-right: auto;
+    }
+    .hero-cta { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-bottom: 48px; }
+    .btn-hero-primary {
+        background: #0ea5e9; border: none; color: #fff;
+        padding: 13px 32px; border-radius: 10px; font-weight: 700;
+        font-size: 1rem; box-shadow: 0 4px 20px rgba(14,165,233,.4);
+        transition: transform .15s, box-shadow .15s;
+    }
+    .btn-hero-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 28px rgba(14,165,233,.5); color:#fff; }
+    .btn-hero-outline {
+        background: rgba(255,255,255,.1); border: 2px solid rgba(255,255,255,.3);
+        color: #fff; padding: 13px 32px; border-radius: 10px; font-weight: 600;
+        font-size: 1rem; backdrop-filter: blur(6px);
+        transition: background .15s, border-color .15s;
+    }
+    .btn-hero-outline:hover { background: rgba(255,255,255,.18); border-color: rgba(255,255,255,.5); color:#fff; }
+
+    /* Search card */
+    .search-card {
+        background: rgba(255,255,255,.97);
+        border-radius: 18px; padding: 24px 36px;
+        box-shadow: 0 24px 64px rgba(0,0,0,.3);
+        max-width: 900px; width: calc(100% - 32px);
+        backdrop-filter: blur(16px);
+    }
+    .search-card .form-label { font-size: .75rem; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: .05em; }
+    .search-card .form-control, .search-card .form-select {
+        border-radius: 8px; border-color: #e2e8f0;
+        font-size: .9rem; background: #f8fafc;
+    }
+    .search-card .form-control:focus, .search-card .form-select:focus {
+        border-color: #0ea5e9; box-shadow: 0 0 0 3px rgba(14,165,233,.12); background: #fff;
+    }
+    .btn-search {
+        background: linear-gradient(135deg, #0ea5e9, #0284c7);
+        border: none; color: #fff; border-radius: 10px;
+        padding: 11px 0; font-weight: 700; font-size: .92rem;
+        box-shadow: 0 4px 14px rgba(14,165,233,.35);
+        transition: transform .12s, box-shadow .12s;
+    }
+    .btn-search:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(14,165,233,.45); }
+
+    /* ── Section headings ─────────────────────────────────── */
+    .section-badge {
+        display: inline-block; background: #eff6ff;
+        color: #2563eb; font-size: .72rem; font-weight: 700;
+        letter-spacing: .08em; text-transform: uppercase;
+        padding: 5px 14px; border-radius: 99px; margin-bottom: 12px;
+    }
+    .section-title { font-size: clamp(1.5rem, 4vw, 2.2rem); font-weight: 800; color: #0f172a; }
+    .section-sub { color: #64748b; max-width: 520px; margin: 8px auto 0; }
+    .section-divider {
+        width: 56px; height: 4px;
+        background: linear-gradient(90deg, #0ea5e9, #6366f1);
+        border-radius: 99px; margin: 14px auto 0;
+    }
+
+    /* ── Room Carousel ─────────────────────────────────────── */
+    .rooms-carousel-wrap {
+        position: relative; padding: 4px 60px 4px;
+    }
+    @@media (max-width: 575px) { .rooms-carousel-wrap { padding: 4px 44px 4px; } }
+    .rooms-viewport { overflow: hidden; }
+    .rooms-track {
+        display: flex; gap: 20px;
+        transition: transform .48s cubic-bezier(.25,.46,.45,.94);
+        will-change: transform;
+    }
+    .room-slide { flex: 0 0 calc(33.333% - 14px); min-width: 0; }
+    @@media (max-width: 991px) { .room-slide { flex: 0 0 calc(50% - 10px); } }
+    @@media (max-width: 575px) { .room-slide { flex: 0 0 100%; } }
+
+    .carousel-nav-btn {
+        position: absolute; top: calc(50% - 22px); transform: translateY(-50%);
+        width: 46px; height: 46px; border-radius: 50%;
+        background: #fff; border: 1px solid #e2e8f0; color: #1e293b;
+        box-shadow: 0 4px 18px rgba(0,0,0,.12);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 15px; cursor: pointer; z-index: 10;
+        transition: background .18s, color .18s, box-shadow .18s, transform .15s;
+        padding: 0;
+    }
+    .carousel-nav-btn:hover:not(:disabled) {
+        background: #0ea5e9; color: #fff; border-color: #0ea5e9;
+        box-shadow: 0 6px 22px rgba(14,165,233,.38);
+        transform: translateY(-50%) scale(1.1);
+    }
+    .carousel-nav-btn:disabled { opacity: .3; cursor: not-allowed; }
+    .carousel-prev { left: 0; }
+    .carousel-next { right: 0; }
+
+    .carousel-dots {
+        display: flex; justify-content: center; align-items: center;
+        gap: 8px; margin-top: 28px;
+    }
+    .carousel-dot {
+        width: 8px; height: 8px; border-radius: 99px;
+        background: #cbd5e1; border: none; cursor: pointer; padding: 0;
+        transition: width .28s ease, background .28s ease;
+    }
+    .carousel-dot.active { width: 28px; background: #0ea5e9; }
+
+    /* ── Room cards ───────────────────────────────────────── */
+    .room-card-v2 {
+        background: #fff; border-radius: 16px;
+        box-shadow: 0 2px 14px rgba(0,0,0,.07);
+        overflow: hidden; height: 100%;
+        transition: transform .2s, box-shadow .2s;
+        border: 1px solid rgba(0,0,0,.04);
+    }
+    .room-card-v2:hover { transform: translateY(-5px); box-shadow: 0 12px 32px rgba(0,0,0,.12); }
+    .room-card-img {
+        height: 210px; overflow: hidden; position: relative;
+    }
+    .room-card-img img { width: 100%; height: 100%; object-fit: cover; transition: transform .4s; }
+    .room-card-v2:hover .room-card-img img { transform: scale(1.05); }
+    .room-badge-avail { position: absolute; top: 12px; right: 12px; }
+    .room-price-badge {
+        position: absolute; bottom: 0; left: 0; right: 0;
+        background: linear-gradient(to top, rgba(0,0,0,.65), transparent);
+        padding: 28px 14px 10px;
+    }
+    .room-price-badge .price-text { color: #fff; font-size: 1.1rem; font-weight: 800; }
+    .room-price-badge .price-unit { color: rgba(255,255,255,.7); font-size: .75rem; }
+    .room-body { padding: 18px 18px 20px; display: flex; flex-direction: column; }
+    .room-name { font-weight: 800; font-size: 1.05rem; color: #0f172a; margin-bottom: 8px; }
+    .room-meta { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 12px; }
+    .room-meta-item { display: flex; align-items: center; gap: 5px; color: #64748b; font-size: .8rem; }
+    .room-meta-item i { color: #0ea5e9; font-size: .75rem; }
+    .room-amenities { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 16px; }
+    .room-amenity {
+        font-size: .72rem; padding: 3px 8px;
+        background: #f0f9ff; color: #0284c7;
+        border-radius: 5px; font-weight: 500;
+    }
+    .room-actions { display: flex; gap: 8px; margin-top: auto; }
+    .btn-room-detail {
+        flex: 1; border: 2px solid #0ea5e9; color: #0ea5e9; background: transparent;
+        border-radius: 9px; font-weight: 600; font-size: .85rem; padding: 9px;
+        transition: background .15s, color .15s;
+    }
+    .btn-room-detail:hover { background: #0ea5e9; color: #fff; }
+    .btn-room-book {
+        flex: 1; background: linear-gradient(135deg, #0ea5e9, #0284c7);
+        color: #fff; border: none; border-radius: 9px;
+        font-weight: 700; font-size: .85rem; padding: 9px;
+        box-shadow: 0 3px 10px rgba(14,165,233,.3);
+        transition: box-shadow .15s, transform .12s;
+    }
+    .btn-room-book:hover { transform: translateY(-1px); box-shadow: 0 5px 16px rgba(14,165,233,.4); color:#fff; }
+    .btn-room-book:disabled { background: #94a3b8; box-shadow: none; cursor: not-allowed; }
+
+    /* Gradient placeholders cho từng card index */
+    .ph-0 { background: linear-gradient(135deg, #1e3a5f, #2d6a9f); }
+    .ph-1 { background: linear-gradient(135deg, #1a3a2a, #2d6a5f); }
+    .ph-2 { background: linear-gradient(135deg, #3a1e1e, #8b4513); }
+    .ph-3 { background: linear-gradient(135deg, #2a1a3a, #5a2d8b); }
+    .ph-4 { background: linear-gradient(135deg, #1a2a3a, #2d5a8b); }
+    .ph-5 { background: linear-gradient(135deg, #1a3a1a, #2d8b5a); }
+    .ph-icon { font-size: 3rem; opacity: .25; color: #fff; }
+
+    /* ── Why StarStay ─────────────────────────────────────── */
+    .why-card {
+        background: #fff; border-radius: 16px;
+        padding: 28px 24px; text-align: center;
+        box-shadow: 0 2px 14px rgba(0,0,0,.06);
+        border: 1px solid rgba(0,0,0,.04); height: 100%;
+        transition: transform .2s, box-shadow .2s;
+    }
+    .why-card:hover { transform: translateY(-4px); box-shadow: 0 8px 28px rgba(0,0,0,.1); }
+    .why-icon {
+        width: 64px; height: 64px; border-radius: 16px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 26px; margin: 0 auto 18px;
+    }
+    .why-title { font-weight: 800; font-size: 1rem; color: #0f172a; margin-bottom: 8px; }
+    .why-sub { font-size: .84rem; color: #64748b; line-height: 1.6; }
+
+    /* ── Services ─────────────────────────────────────────── */
+    .svc-section { background: #f8faff; }
+    .svc-card {
+        background: #fff; border-radius: 14px;
+        padding: 22px 20px; display: flex; align-items: flex-start; gap: 16px;
+        box-shadow: 0 2px 10px rgba(0,0,0,.05);
+        border: 1px solid rgba(0,0,0,.04); height: 100%;
+        transition: transform .15s, box-shadow .15s;
+    }
+    .svc-card:hover { transform: translateY(-3px); box-shadow: 0 6px 22px rgba(0,0,0,.09); }
+    .svc-icon {
+        width: 48px; height: 48px; flex-shrink: 0; border-radius: 12px;
+        background: linear-gradient(135deg, #0ea5e9, #6366f1);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 18px; color: #fff;
+    }
+    .svc-name { font-weight: 700; font-size: .95rem; color: #0f172a; margin-bottom: 4px; }
+    .svc-price { font-size: .82rem; color: #0ea5e9; font-weight: 600; }
+    .svc-desc { font-size: .8rem; color: #64748b; margin-top: 4px; line-height: 1.5; }
+
+    /* ── Stats bar ────────────────────────────────────────── */
+    .stats-bar { background: linear-gradient(135deg, #0f172a, #1e3a5f); color: #fff; }
+    .stat-item { text-align: center; padding: 24px 16px; }
+    .stat-num { font-size: 2rem; font-weight: 900; color: #67e8f9; line-height: 1; }
+    .stat-lbl { font-size: .8rem; color: rgba(255,255,255,.6); margin-top: 6px; font-weight: 500; }
+
+    /* ── Footer ───────────────────────────────────────────── */
+    .footer-main {
+        background: #0c1f3a;
+        color: rgba(255,255,255,.75); padding: 60px 0 32px;
+    }
+    .footer-brand { font-size: 1.25rem; font-weight: 800; color: #fff; margin-bottom: 12px; }
+    .footer-desc { font-size: .85rem; line-height: 1.7; max-width: 240px; }
+    .footer-h { font-size: .8rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #fff; margin-bottom: 16px; }
+    .footer-link {
+        display: block; font-size: .85rem; color: rgba(255,255,255,.65);
+        text-decoration: none; margin-bottom: 9px; transition: color .15s;
+    }
+    .footer-link:hover { color: #67e8f9; }
+    .footer-link i { width: 16px; margin-right: 8px; }
+    .footer-divider { border-color: rgba(255,255,255,.1); margin: 32px 0 20px; }
+    .footer-copy { font-size: .8rem; color: rgba(255,255,255,.4); }
+    .footer-socials { display: flex; gap: 10px; margin-top: 18px; }
+    .footer-social {
+        width: 36px; height: 36px; border-radius: 8px;
+        background: rgba(255,255,255,.08); color: rgba(255,255,255,.65);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 14px; transition: background .15s, color .15s;
+    }
+    .footer-social:hover { background: #0ea5e9; color: #fff; }
+</style>
+
+<!-- ── HERO ────────────────────────────────────────────────────────── -->
+<section class="hero-wrap">
+    <div class="hero-blob-1"></div>
+    <div class="hero-blob-2"></div>
+    <div class="hero-blob-3"></div>
+    <div class="hero-dots"></div>
+
+    <div class="hero-content w-100">
+        <div class="hero-badge">
+            <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+            Khách sạn 4 sao
+        </div>
+        <h1 class="hero-title">
+            StarStay <span>Hotel</span><br />
+            <span style="font-size:.65em;color:rgba(255,255,255,.85)">Đà Nẵng</span>
+        </h1>
+        <p class="hero-sub">
+            Trải nghiệm nghỉ dưỡng đẳng cấp bên bờ biển Mỹ Khê - nơi sang trọng gặp sự bình yên
+        </p>
+        <div class="hero-cta">
+            <a href="/Phong" class="btn-hero-primary">
+                <i class="fas fa-door-open me-2"></i>Xem phòng
+            </a>
+            <a href="#phong-section" class="btn-hero-outline">
+                <i class="fas fa-chevron-down me-2"></i>Khám phá
+            </a>
+        </div>
+
+        <!-- Search form -->
+        <div class="search-card mx-auto">
+            <div class="text-start mb-3">
+                <span class="fw-bold" style="color:#0f172a;font-size:.9rem">
+                    <i class="fas fa-search me-1 text-sky-600" style="color:#0ea5e9"></i>
+                    Tìm phòng trống
+                </span>
+            </div>
+            <form method="get" action="/Phong" class="row g-2 align-items-end">
+                <div class="col-6 col-md-3">
+                    <label class="form-label">Nhận phòng</label>
+                    <input type="date" name="ngayNhan" class="form-control"
+                           value="@DateTime.Today.AddDays(1).ToString("yyyy-MM-dd")"
+                           min="@DateTime.Today.ToString("yyyy-MM-dd")" required />
+                </div>
+                <div class="col-6 col-md-3">
+                    <label class="form-label">Trả phòng</label>
+                    <input type="date" name="ngayTra" class="form-control"
+                           value="@DateTime.Today.AddDays(2).ToString("yyyy-MM-dd")"
+                           min="@DateTime.Today.AddDays(1).ToString("yyyy-MM-dd")" required />
+                </div>
+                <div class="col-4 col-md-2">
+                    <label class="form-label">Người lớn</label>
+                    <select name="soNguoiLon" class="form-select">
+                        @for (int i = 1; i <= 6; i++) { <option value="@i">@i</option> }
+                    </select>
+                </div>
+                <div class="col-4 col-md-2">
+                    <label class="form-label">Trẻ em</label>
+                    <select name="soTreEm" class="form-select">
+                        @for (int i = 0; i <= 4; i++) { <option value="@i">@i</option> }
+                    </select>
+                </div>
+                <div class="col-4 col-md-2">
+                    <label class="form-label d-none d-md-block" style="visibility:hidden">.</label>
+                    <button type="submit" class="btn btn-search w-100">
+                        <i class="fas fa-search me-1"></i>Tìm
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Wave divider -->
+    <div class="hero-wave">
+        <svg viewBox="0 0 1440 80" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M0,40 C240,80 480,0 720,40 C960,80 1200,0 1440,40 L1440,80 L0,80 Z" fill="#f8faff"/>
+        </svg>
+    </div>
+</section>
+
+<!-- ── STATS BAR ──────────────────────────────────────────────────── -->
+<div class="stats-bar d-none d-md-block">
+    <div class="container">
+        <div class="row g-0">
+            <div class="col-md-3"><div class="stat-item"><div class="stat-num">10+</div><div class="stat-lbl">Loại phòng sang trọng</div></div></div>
+            <div class="col-md-3"><div class="stat-item"><div class="stat-num">24/7</div><div class="stat-lbl">Hỗ trợ lễ tân</div></div></div>
+            <div class="col-md-3"><div class="stat-item"><div class="stat-num">4 sao</div><div class="stat-lbl">Tiêu chuẩn quốc tế</div></div></div>
+            <div class="col-md-3"><div class="stat-item"><div class="stat-num">200m</div><div class="stat-lbl">Đến biển Mỹ Khê</div></div></div>
+        </div>
+    </div>
+</div>
+
+<!-- ── ROOMS ──────────────────────────────────────────────────────── -->
+<section id="phong-section" style="background:#f8faff;padding:72px 0;">
+    <div class="container">
+        <div class="text-center mb-5">
+            <span class="section-badge">Phòng của chúng tôi</span>
+            <h2 class="section-title">Các loại phòng nổi bật</h2>
+            <div class="section-divider"></div>
+            <p class="section-sub">Không gian nghỉ dưỡng được thiết kế tinh tế - từ phòng Standard đến Suite cao cấp</p>
+        </div>
+
+        @if (!Model.Any())
+        {
+            <div class="alert alert-info text-center">Hiện chưa có phòng nào.</div>
+        }
+        else
+        {
+            <div class="rooms-carousel-wrap">
+                <button class="carousel-nav-btn carousel-prev" id="roomPrev" aria-label="Trước">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <div class="rooms-viewport">
+                <div class="rooms-track" id="roomsTrack">
+                @{ int cardIdx = 0; }
+                @foreach (var p in Model)
+                {
+                    <div class="room-slide">
+                        <div class="room-card-v2">
+                            <div class="room-card-img">
+                                @if (!string.IsNullOrEmpty(p.AnhChinh))
+                                {
+                                    <img src="@p.AnhChinh" alt="@p.TenLoaiPhong" />
+                                }
+                                else
+                                {
+                                    <div class="w-100 h-100 ph-@(cardIdx % 6) d-flex align-items-center justify-content-center">
+                                        <i class="fas fa-bed ph-icon"></i>
+                                    </div>
+                                }
+                                <div class="room-price-badge">
+                                    <div class="price-text">@p.GiaCoBan.ToString("N0") ₫</div>
+                                    <div class="price-unit">/đêm</div>
+                                </div>
+                            </div>
+                            <div class="room-body">
+                                <div class="room-name">@p.TenLoaiPhong</div>
+                                <div class="room-meta">
+                                    @if (p.DienTich.HasValue)
+                                    {
+                                        <span class="room-meta-item"><i class="fas fa-ruler-combined"></i>@p.DienTich m²</span>
+                                    }
+                                    <span class="room-meta-item"><i class="fas fa-user-friends"></i>@p.SucChuaNguoiLon NL</span>
+                                    @if (!string.IsNullOrEmpty(p.LoaiGiuong))
+                                    {
+                                        <span class="room-meta-item"><i class="fas fa-bed"></i>@p.LoaiGiuong</span>
+                                    }
+                                </div>
+                                @if (p.TenTienNghis.Any())
+                                {
+                                    <div class="room-amenities">
+                                        @for (int i = 0; i < Math.Min(3, p.TenTienNghis.Count); i++)
+                                        {
+                                            <span class="room-amenity">
+                                                <i class="fas @p.BieuTuongTienNghis[i] me-1"></i>@p.TenTienNghis[i]
+                                            </span>
+                                        }
+                                        @if (p.TenTienNghis.Count > 3)
+                                        {
+                                            <span class="room-amenity" style="background:#f1f5f9;color:#94a3b8">+@(p.TenTienNghis.Count - 3)</span>
+                                        }
+                                    </div>
+                                }
+                                <div class="room-actions">
+                                    <a href="/Phong/ChiTiet/@p.MaLoaiPhong" class="btn-room-detail">Chi tiết</a>
+                                    @if (p.SoPhongConTrong > 0)
+                                    {
+                                        <a href="/DatPhong/Create?maLoaiPhong=@p.MaLoaiPhong" class="btn-room-book text-decoration-none text-center">Đặt ngay</a>
+                                    }
+                                    else
+                                    {
+                                        <button class="btn-room-book" disabled>Hết phòng</button>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    cardIdx++;
+                }
+                </div><!-- /rooms-track -->
+                </div><!-- /rooms-viewport -->
+                <button class="carousel-nav-btn carousel-next" id="roomNext" aria-label="Tiếp">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+                <div class="carousel-dots" id="roomDots"></div>
+            </div><!-- /rooms-carousel-wrap -->
+            <div class="text-center mt-4">
+                <a href="/Phong" class="btn btn-outline-primary px-5 py-2 fw-semibold" style="border-radius:10px;border-width:2px">
+                    <i class="fas fa-th-large me-2"></i>Xem tất cả phòng
+                </a>
+            </div>
+        }
+    </div>
+</section>
+
+<!-- ── WHY STAYSTAY ───────────────────────────────────────────────── -->
+<section style="background:#fff;padding:72px 0;">
+    <div class="container">
+        <div class="text-center mb-5">
+            <span class="section-badge">Vì sao chọn chúng tôi</span>
+            <h2 class="section-title">Trải nghiệm đẳng cấp tại StarStay</h2>
+            <div class="section-divider"></div>
+        </div>
+        <div class="row g-4">
+            <div class="col-sm-6 col-lg-3">
+                <div class="why-card">
+                    <div class="why-icon" style="background:linear-gradient(135deg,#0ea5e9,#0284c7)">
+                        <i class="fas fa-map-marker-alt text-white"></i>
+                    </div>
+                    <div class="why-title">Vị trí đắc địa</div>
+                    <div class="why-sub">Cách bãi biển Mỹ Khê chỉ 200m, gần trung tâm thành phố & các điểm du lịch nổi tiếng.</div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-lg-3">
+                <div class="why-card">
+                    <div class="why-icon" style="background:linear-gradient(135deg,#10b981,#059669)">
+                        <i class="fas fa-concierge-bell text-white"></i>
+                    </div>
+                    <div class="why-title">Phục vụ 24/7</div>
+                    <div class="why-sub">Đội ngũ lễ tân chuyên nghiệp luôn sẵn sàng hỗ trợ bạn bất kỳ lúc nào trong ngày.</div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-lg-3">
+                <div class="why-card">
+                    <div class="why-icon" style="background:linear-gradient(135deg,#f59e0b,#d97706)">
+                        <i class="fas fa-wifi text-white"></i>
+                    </div>
+                    <div class="why-title">WiFi tốc độ cao</div>
+                    <div class="why-sub">Kết nối internet miễn phí tốc độ cao trên toàn khu vực khách sạn, kể cả hồ bơi.</div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-lg-3">
+                <div class="why-card">
+                    <div class="why-icon" style="background:linear-gradient(135deg,#8b5cf6,#6d28d9)">
+                        <i class="fas fa-shield-alt text-white"></i>
+                    </div>
+                    <div class="why-title">An toàn & Sạch sẽ</div>
+                    <div class="why-sub">Tiêu chuẩn vệ sinh 4 sao, phòng được dọn dẹp kỹ lưỡng sau mỗi lượt khách.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── DỊCH VỤ ────────────────────────────────────────────────────── -->
+@if (dichVus.Any())
+{
+    <section class="svc-section" style="padding:72px 0;">
+        <div class="container">
+            <div class="text-center mb-5">
+                <span class="section-badge">Tiện ích & Dịch vụ</span>
+                <h2 class="section-title">Dịch vụ tại StarStay Hotel</h2>
+                <div class="section-divider"></div>
+                <p class="section-sub">Đầy đủ tiện nghi phục vụ kỳ nghỉ hoàn hảo của bạn</p>
+            </div>
+            <div class="row g-3">
+                @foreach (var dv in dichVus)
+                {
+                    <div class="col-sm-6 col-lg-4">
+                        <div class="svc-card">
+                            <div class="svc-icon">
+                                <i class="fas fa-spa"></i>
+                            </div>
+                            <div>
+                                <div class="svc-name">@dv.TenDichVu</div>
+                                <div class="svc-price">
+                                    @dv.Gia.ToString("N0") ₫<span class="text-muted fw-normal"> / @(dv.DonVi ?? "lần")</span>
+                                </div>
+                                @if (!string.IsNullOrEmpty(dv.MoTa))
+                                {
+                                    <div class="svc-desc">@dv.MoTa</div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </section>
+}
+
+<!-- ── CTA BANNER ─────────────────────────────────────────────────── -->
+<section style="background:linear-gradient(135deg,#0f172a 0%,#0f4c81 50%,#0a7a6e 100%);padding:64px 0;">
+    <div class="container text-center">
+        <h2 class="fw-bold text-white mb-3" style="font-size:clamp(1.4rem,4vw,2rem)">
+            Sẵn sàng cho kỳ nghỉ hoàn hảo?
+        </h2>
+        <p class="mb-4" style="color:rgba(255,255,255,.7);font-size:1.05rem">
+            Đặt phòng ngay hôm nay - hưởng ưu đãi giá tốt nhất trực tiếp trên web
+        </p>
+        <div class="d-flex gap-3 justify-content-center flex-wrap">
+            <a href="/Phong" class="btn-hero-primary btn fw-bold px-5 py-3" style="background:#0ea5e9;color:#fff;border-radius:10px;border:none">
+                <i class="fas fa-door-open me-2"></i>Xem phòng ngay
+            </a>
+            <a href="tel:02361234567" class="btn fw-semibold px-5 py-3"
+               style="background:rgba(255,255,255,.12);border:2px solid rgba(255,255,255,.3);color:#fff;border-radius:10px">
+                <i class="fas fa-phone me-2"></i>Gọi đặt phòng
+            </a>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+<script>
+(function () {
+    var track = document.getElementById('roomsTrack');
+    if (!track) return;
+
+    var slides   = Array.from(track.children);
+    var total    = slides.length;
+    var current  = 0;
+    var autoTimer;
+    var prevBtn  = document.getElementById('roomPrev');
+    var nextBtn  = document.getElementById('roomNext');
+    var dotsWrap = document.getElementById('roomDots');
+
+    function getVisible() {
+        var w = window.innerWidth;
+        if (w >= 992) return Math.min(3, total);
+        if (w >= 576) return Math.min(2, total);
+        return 1;
+    }
+
+    function maxIdx() { return Math.max(0, total - getVisible()); }
+
+    function goTo(idx) {
+        var vis    = getVisible();
+        current    = Math.max(0, Math.min(idx, maxIdx()));
+        var gap    = 20;
+        var vpW    = track.parentElement.offsetWidth;
+        var slideW = (vpW - gap * (vis - 1)) / vis;
+        track.style.transform = 'translateX(-' + (current * (slideW + gap)) + 'px)';
+        dotsWrap.querySelectorAll('.carousel-dot').forEach(function(d, i) {
+            d.classList.toggle('active', i === current);
+        });
+        prevBtn.disabled = current === 0;
+        nextBtn.disabled = current >= maxIdx();
+    }
+
+    function buildDots() {
+        dotsWrap.innerHTML = '';
+        for (var i = 0; i <= maxIdx(); i++) {
+            var d = document.createElement('button');
+            d.className = 'carousel-dot' + (i === 0 ? ' active' : '');
+            d.setAttribute('aria-label', 'Trang ' + (i + 1));
+            (function(idx) {
+                d.addEventListener('click', function() { goTo(idx); resetAuto(); });
+            })(i);
+            dotsWrap.appendChild(d);
+        }
+    }
+
+    function resetAuto() {
+        clearInterval(autoTimer);
+        autoTimer = setInterval(function() {
+            goTo(current >= maxIdx() ? 0 : current + 1);
+        }, 4500);
+    }
+
+    prevBtn.addEventListener('click', function() { goTo(current - 1); resetAuto(); });
+    nextBtn.addEventListener('click', function() { goTo(current + 1); resetAuto(); });
+
+    track.parentElement.addEventListener('mouseenter', function() { clearInterval(autoTimer); });
+    track.parentElement.addEventListener('mouseleave', resetAuto);
+
+    var touchStartX = 0;
+    track.addEventListener('touchstart', function(e) {
+        touchStartX = e.touches[0].clientX;
+    }, { passive: true });
+    track.addEventListener('touchend', function(e) {
+        var dx = e.changedTouches[0].clientX - touchStartX;
+        if (Math.abs(dx) > 40) { goTo(dx < 0 ? current + 1 : current - 1); resetAuto(); }
+    }, { passive: true });
+
+    var resizeTimer;
+    window.addEventListener('resize', function() {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(function() { buildDots(); goTo(Math.min(current, maxIdx())); }, 150);
+    });
+
+    buildDots();
+    goTo(0);
+    resetAuto();
+})();
+</script>
+}

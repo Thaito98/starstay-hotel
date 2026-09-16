@@ -1,0 +1,72 @@
+@model DatPhongKhachSan.Models.Entities.DatPhong
+@{
+    ViewData["Title"] = "Đặt phòng thành công";
+    var tien = ViewBag.TinhTien as DatPhongKhachSan.Services.TinhTienResult;
+    var chiTiet = Model.ChiTietDatPhongs.FirstOrDefault();
+}
+
+<div class="container py-5" style="max-width:640px;">
+    <div class="card border-0 shadow text-center">
+        <div class="card-body p-5">
+            <div class="mb-3">
+                <i class="fas fa-check-circle fa-5x text-success"></i>
+            </div>
+            <h2 class="fw-bold text-success mb-1">Đặt phòng thành công!</h2>
+            @if (User.Identity?.IsAuthenticated == true)
+            {
+                <p class="text-muted mb-4">Xác nhận đã gửi tới email của bạn.</p>
+            }
+            else
+            {
+                <div class="alert alert-warning mb-4 text-start">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Ghi lại mã đơn của bạn!</strong><br />
+                    Bạn đặt không có tài khoản - không thể xem lịch sử trực tuyến.<br />
+                    Muốn hủy hoặc tra cứu: <strong>gọi lễ tân</strong> và cung cấp mã đơn hoặc số điện thoại đã đăng ký.
+                </div>
+            }
+
+            <div class="bg-light rounded p-4 text-start mb-4">
+                <div class="row g-2">
+                    <div class="col-6 text-muted small">Mã đơn</div>
+                    <div class="col-6 fw-bold">@Model.MaDon</div>
+
+                    <div class="col-6 text-muted small">Loại phòng</div>
+                    <div class="col-6">
+                        @chiTiet?.MaPhongNavigation?.MaLoaiPhongNavigation?.TenLoaiPhong
+                    </div>
+
+                    <div class="col-6 text-muted small">Phòng</div>
+                    <div class="col-6">@chiTiet?.MaPhongNavigation?.SoPhong</div>
+
+                    <div class="col-6 text-muted small">Nhận phòng</div>
+                    <div class="col-6">@Model.NgayNhanPhong.ToString("dd/MM/yyyy")</div>
+
+                    <div class="col-6 text-muted small">Trả phòng</div>
+                    <div class="col-6">@Model.NgayTraPhong.ToString("dd/MM/yyyy") (@Model.SoDem đêm)</div>
+
+                    <div class="col-6 text-muted small">Tổng tiền</div>
+                    <div class="col-6 fw-bold text-primary">@tien?.TongTien.ToString("N0") ₫</div>
+
+                    <div class="col-6 text-muted small">Đã thanh toán</div>
+                    <div class="col-6 text-success fw-bold">@tien?.SoTienDaTra.ToString("N0") ₫</div>
+
+                    @if (tien?.SoTienConLai > 0)
+                    {
+                        <div class="col-6 text-muted small">Trả thêm khi check-in</div>
+                        <div class="col-6 text-warning fw-bold">@tien.SoTienConLai.ToString("N0") ₫</div>
+                    }
+                </div>
+            </div>
+
+            <div class="d-flex gap-2 justify-content-center">
+                <a asp-controller="DatPhong" asp-action="LichSu" class="btn btn-primary">
+                    <i class="fas fa-history me-1"></i>Xem lịch sử đặt phòng
+                </a>
+                <a asp-controller="Home" asp-action="Index" class="btn btn-outline-secondary">
+                    <i class="fas fa-home me-1"></i>Trang chủ
+                </a>
+            </div>
+        </div>
+    </div>
+</div>

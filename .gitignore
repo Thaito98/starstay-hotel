@@ -1,0 +1,37 @@
+# Build output
+**/bin/
+**/obj/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+
+# ASP.NET
+**/wwwroot/lib/
+**/appsettings.Development.json
+**/appsettings.json
+.env
+*.env
+
+# Data Protection keys - sinh tự động, không lên git
+**/App_Data/keys/
+
+# Tài liệu nội bộ - chỉ giữ local, không push lên repo public
+README-vi.md
+**/plan.md
+**/plan part2.md
+**/plan-part2-v3.md
+*.docx
+
+# Visual Studio service dependency - file cá nhân, không push
+**/serviceDependencies.local.json
+**/serviceDependencies.local.json.user
+
+# Publish test output
+publish_test/
+publish_deploy/
+
+# Rider / JetBrains
+.idea/
+*.DotSettings.user

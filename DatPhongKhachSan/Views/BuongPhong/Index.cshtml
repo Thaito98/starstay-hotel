@@ -1,0 +1,221 @@
+@model List<DatPhongKhachSan.Models.Entities.DonGiaoViec>
+@{
+    ViewData["Title"] = "Buồng phòng";
+    var loc = ViewBag.Loc as string ?? "TatCa";
+    var phongCanXuLy = ViewBag.PhongCanXuLy as List<DatPhongKhachSan.Models.Entities.Phong> ?? new();
+}
+
+<div class="container-fluid py-4">
+    <h2 class="fw-bold mb-4"><i class="fas fa-broom me-2 text-primary"></i>Buồng phòng</h2>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show">
+            <i class="fas fa-check-circle me-2"></i>@TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show">
+            @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Phòng đang cần dọn/sửa -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-warning bg-opacity-25 fw-semibold">
+            <i class="fas fa-exclamation-circle me-1 text-warning"></i>
+            Phòng đang cần dọn dẹp / xử lý
+            <span class="badge bg-warning text-dark ms-1">@phongCanXuLy.Count phòng</span>
+        </div>
+        @if (!phongCanXuLy.Any())
+        {
+            <div class="card-body text-muted text-center py-3">
+                <i class="fas fa-check-circle text-success me-1"></i>Tất cả phòng đã sạch sẵn sàng.
+            </div>
+        }
+        else
+        {
+            <div class="card-body p-0">
+                <div class="row g-0">
+                    @foreach (var p in phongCanXuLy)
+                    {
+                        var donHienTai = p.DonGiaoViecs.OrderByDescending(d => d.NgayGiao).FirstOrDefault();
+                        <div class="col-md-4 col-lg-3 border-end border-bottom p-3">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div>
+                                    <span class="fw-bold fs-5">Phòng @p.SoPhong</span>
+                                    <div class="text-muted small">@p.MaLoaiPhongNavigation?.TenLoaiPhong</div>
+                                </div>
+                                <span class="badge bg-warning text-dark">Đang dọn</span>
+                            </div>
+
+                            @if (donHienTai != null && donHienTai.TrangThai == "ChoLam")
+                            {
+                                <!-- Đã có đơn - hiện nghiệm thu -->
+                                <div class="bg-light rounded p-2 mb-2 small">
+                                    <div class="text-muted">Đơn #@donHienTai.MaDonViec</div>
+                                    <div class="text-truncate">@donHienTai.NoiDung</div>
+                                </div>
+                                <form asp-action="NghiemThu" method="post">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="maDonViec" value="@donHienTai.MaDonViec" />
+                                    <textarea name="ghiChu" class="form-control form-control-sm mb-1"
+                                              rows="2" placeholder="Ghi chú nghiệm thu..."></textarea>
+                                    <button type="submit" class="btn btn-success btn-sm w-100">
+                                        <i class="fas fa-check me-1"></i>Nghiệm thu => Trống
+                                    </button>
+                                </form>
+                            }
+                            else
+                            {
+                                <!-- Chưa có đơn hoặc đơn đã xong - lập mới -->
+                                <a asp-action="GiaoViec" asp-route-maPhong="@p.MaPhong"
+                                   class="btn btn-outline-warning btn-sm w-100">
+                                    <i class="fas fa-clipboard-list me-1"></i>Lập đơn giao việc
+                                </a>
+                            }
+
+                            <!-- Nút CapNhat thủ công -->
+                            <form asp-action="CapNhatPhong" method="post" class="mt-2"
+                                  data-confirm="Đánh dấu phòng @p.SoPhong là Trống (không cần đơn)?">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="maPhong" value="@p.MaPhong" />
+                                <input type="hidden" name="trangThai" value="Trong" />
+                                <div class="d-flex gap-1">
+                                    <button type="submit" class="btn btn-outline-success btn-sm flex-grow-1">
+                                        <i class="fas fa-check"></i> Trống luôn
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- Lịch sử đơn giao việc + tìm kiếm -->
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-light">
+            <div class="d-flex flex-wrap justify-content-between align-items-center mb-2 gap-2">
+                <span class="fw-semibold">
+                    <i class="fas fa-search me-1 text-primary"></i>Tra cứu lịch sử giao việc
+                </span>
+                <span class="text-muted small">
+                    @Model.Count đơn
+                    @if (ViewBag.DaLoc == true) { <span class="badge bg-info ms-1">Đang lọc</span> }
+                </span>
+            </div>
+
+            <!-- Form tìm kiếm -->
+            <form method="get" asp-action="Index" class="row g-2 align-items-end">
+                <div class="col-md-2">
+                    <label class="form-label fw-semibold small">Số phòng</label>
+                    <input type="text" name="soPhong" class="form-control form-control-sm"
+                           value="@ViewBag.SoPhong" placeholder="101, 202..." />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label fw-semibold small">Từ ngày</label>
+                    <input type="date" name="tuNgay" class="form-control form-control-sm"
+                           value="@ViewBag.TuNgay" />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label fw-semibold small">Đến ngày</label>
+                    <input type="date" name="denNgay" class="form-control form-control-sm"
+                           value="@ViewBag.DenNgay" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold small">Trạng thái</label>
+                    <select name="loc" class="form-select form-select-sm">
+                        <option value="TatCa" selected="@(loc == "TatCa" ? "selected" : null)">Tất cả</option>
+                        <option value="ChoLam" selected="@(loc == "ChoLam" ? "selected" : null)">Chờ làm</option>
+                        <option value="HoanThanh" selected="@(loc == "HoanThanh" ? "selected" : null)">Hoàn thành</option>
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex gap-1">
+                    <button type="submit" class="btn btn-primary btn-sm w-100">
+                        <i class="fas fa-search me-1"></i>Tìm
+                    </button>
+                    <a asp-action="Index" class="btn btn-outline-secondary btn-sm" title="Xóa bộ lọc">
+                        <i class="fas fa-times"></i>
+                    </a>
+                </div>
+            </form>
+        </div>
+
+        @if (!Model.Any())
+        {
+            <div class="card-body text-center text-muted py-4">
+                <i class="fas fa-inbox fa-2x mb-2 d-block opacity-25"></i>
+                Không tìm thấy đơn nào phù hợp.
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover table-sm mb-0 align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Phòng</th>
+                            <th>Ngày giao</th>
+                            <th>Nội dung công việc</th>
+                            <th>Nghiệm thu</th>
+                            <th>Ngày xong</th>
+                            <th>Trạng thái</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var d in Model)
+                        {
+                            <tr>
+                                <td>
+                                    <span class="fw-bold">@d.MaPhongNavigation?.SoPhong</span>
+                                    <div class="text-muted" style="font-size:11px;">
+                                        @d.MaPhongNavigation?.MaLoaiPhongNavigation?.TenLoaiPhong
+                                    </div>
+                                </td>
+                                <td class="text-nowrap small">@d.NgayGiao.ToString("dd/MM/yyyy")<br/>@d.NgayGiao.ToString("HH:mm")</td>
+                                <td style="max-width:320px;">
+                                    <div style="white-space:pre-wrap; font-size:13px;">@d.NoiDung</div>
+                                </td>
+                                <td class="small text-muted fst-italic" style="max-width:200px;">
+                                    @d.GhiChuNghiemThu
+                                </td>
+                                <td class="text-nowrap small">
+                                    @if (d.NgayHoanThanh.HasValue)
+                                    {
+                                        @d.NgayHoanThanh.Value.ToString("dd/MM/yyyy")<br/>
+                                        @d.NgayHoanThanh.Value.ToString("HH:mm")
+                                    }
+                                    else { <span class="text-muted">-</span> }
+                                </td>
+                                <td>
+                                    <span class="badge @(d.TrangThai == "HoanThanh" ? "bg-success" : "bg-warning text-dark")">
+                                        @(d.TrangThai == "HoanThanh" ? "Hoàn thành" : "Chờ làm")
+                                    </span>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.querySelectorAll('[data-confirm]').forEach(f => {
+            f.addEventListener('submit', e => {
+                e.preventDefault();
+                Swal.fire({ title: 'Xác nhận', text: f.dataset.confirm, icon: 'question',
+                    showCancelButton: true, confirmButtonText: 'Đồng ý', cancelButtonText: 'Hủy',
+                    confirmButtonColor: '#198754'
+                }).then(r => { if (r.isConfirmed) f.submit(); });
+            });
+        });
+    </script>
+}

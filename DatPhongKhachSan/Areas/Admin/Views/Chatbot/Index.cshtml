@@ -1,0 +1,416 @@
+@model List<DatPhongKhachSan.Models.Entities.DoanVanBan>
+@{
+    ViewData["Title"] = "Quản lý FAQ Chatbot";
+}
+
+<div class="container-fluid py-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-start mb-3 gap-2">
+        <h2 class="fw-bold mb-0">
+            <i class="fas fa-robot me-2 text-primary"></i>Quản lý FAQ Chatbot
+            <span id="aiBadge" class="ms-2 badge bg-secondary" style="font-size:.65rem;vertical-align:middle;">
+                <i class="fas fa-circle-notch fa-spin me-1"></i>Kiểm tra AI provider...
+            </span>
+        </h2>
+        <div class="d-flex flex-wrap gap-2">
+            <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modalThem">
+                <i class="fas fa-plus me-1"></i>Thêm FAQ
+            </button>
+            <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#modalImport">
+                <i class="fas fa-upload me-1"></i>Import CSV
+            </button>
+            <a asp-action="ExportCsv" class="btn btn-outline-secondary btn-sm">
+                <i class="fas fa-download me-1"></i>Export CSV
+            </a>
+            <form asp-action="ReIndex" method="post" class="d-inline" id="formReIndex">
+                @Html.AntiForgeryToken()
+                <button type="submit" id="btnReIndex" class="btn btn-warning btn-sm">
+                    <i class="fas fa-sync me-1"></i>Re-index tất cả
+                </button>
+            </form>
+        </div>
+    </div>
+
+    @if (ViewBag.CanhBaoLechModel != null)
+    {
+        <div class="alert alert-warning d-flex align-items-center gap-2 py-2 mb-3" role="alert">
+            <i class="fas fa-exclamation-triangle"></i>
+            <span>@ViewBag.CanhBaoLechModel</span>
+        </div>
+    }
+
+    <!-- Thống kê nhanh -->
+    <div class="row g-3 mb-3">
+        <div class="col-md-3">
+            <div class="card border-0 bg-primary text-white text-center py-2">
+                <div class="fw-bold fs-5">@ViewBag.TongDong</div>
+                <div class="small">Tổng FAQ</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 bg-success text-white text-center py-2">
+                <div class="fw-bold fs-5">@ViewBag.CoEmbedding</div>
+                <div class="small">Đã có embedding</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 @(ViewBag.TongDong - ViewBag.CoEmbedding > 0 ? "bg-warning text-dark" : "bg-secondary text-white") text-center py-2">
+                <div class="fw-bold fs-5">@(ViewBag.TongDong - ViewBag.CoEmbedding)</div>
+                <div class="small">Chưa có embedding</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 bg-info text-white text-center py-2">
+                <div class="fw-bold fs-5">@ViewBag.CacheCnt</div>
+                <div class="small">Trong cache</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Progress bar re-index (ẩn khi không chạy) -->
+    <div id="reindexProgress" class="card border-warning mb-3" style="display:none;">
+        <div class="card-body py-2">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+                <span class="fw-semibold text-warning"><i class="fas fa-sync fa-spin me-2"></i>Re-index đang chạy...</span>
+                <span id="progressText" class="small text-muted">0 / 0</span>
+            </div>
+            <div class="progress" style="height:20px;">
+                <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-warning"
+                     style="width:0%">0%</div>
+            </div>
+            <div class="d-flex justify-content-between mt-1">
+                <span id="progressFail" class="small text-danger"></span>
+                <span class="small text-muted">Tự động cập nhật mỗi 2 giây</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lọc -->
+    <div class="card shadow-sm border-0 mb-3">
+        <div class="card-body py-2">
+            <form method="get" asp-action="Index" class="row g-2 align-items-end">
+                <div class="col-md-4">
+                    <input type="text" name="search" class="form-control form-control-sm"
+                           value="@ViewBag.Search" placeholder="Tìm câu hỏi / câu trả lời..." />
+                </div>
+                <div class="col-md-3">
+                    <select name="chuDe" class="form-select form-select-sm">
+                        <option value="">-- Tất cả chủ đề --</option>
+                        @foreach (var cd in (ViewBag.ChuDes as List<string?> ?? new()))
+                        {
+                            <option value="@cd" selected="@(ViewBag.ChuDe == cd ? "selected" : null)">@cd</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-primary btn-sm">Lọc</button>
+                    <a asp-action="Index" class="btn btn-outline-secondary btn-sm ms-1">Xóa</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Danh sách FAQ -->
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+
+            <!-- ── Mobile cards ──────────────────────────────────── -->
+            <div class="d-md-none p-2 d-flex flex-column gap-2">
+                @foreach (var d in Model)
+                {
+                    <div class="card border rounded-3 shadow-sm">
+                        <div class="card-body p-3">
+                            <div class="d-flex justify-content-between align-items-start mb-1">
+                                <span class="badge bg-secondary">@(d.ChuDe ?? "-")</span>
+                                <div class="d-flex align-items-center gap-1">
+                                    @if (d.Embedding != null)
+                                    {
+                                        <i class="fas fa-check-circle text-success" title="Có embedding"></i>
+                                    }
+                                    else
+                                    {
+                                        <i class="fas fa-times-circle text-danger" title="Chưa có embedding"></i>
+                                    }
+                                    <span class="text-muted" style="font-size:.7rem;">@d.NgayIndex.ToString("dd/MM")</span>
+                                </div>
+                            </div>
+                            <div class="fw-semibold small mb-1" style="line-height:1.3;">@d.CauHoi</div>
+                            <div class="text-muted small mb-2" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;" title="@d.TraLoi">@d.TraLoi</div>
+                            <div class="d-flex gap-2 pt-2 border-top">
+                                <button class="btn btn-outline-primary btn-sm btn-sua"
+                                        data-id="@d.MaDoan"
+                                        data-chude="@(d.ChuDe ?? "")"
+                                        data-cauhoi="@d.CauHoi"
+                                        data-traloi="@d.TraLoi">
+                                    <i class="fas fa-edit me-1"></i>Sửa
+                                </button>
+                                <form asp-action="Xoa" asp-route-maDoan="@d.MaDoan" method="post"
+                                      data-confirm="Xóa FAQ này?">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-outline-danger btn-sm">
+                                        <i class="fas fa-trash me-1"></i>Xóa
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                }
+                @if (!Model.Any()) { <div class="text-center text-muted py-4 small">Chưa có FAQ nào.</div> }
+            </div>
+
+            <!-- ── Desktop table ──────────────────────────────────── -->
+            <div class="table-responsive d-none d-md-block">
+            <table id="tbl" class="table table-hover table-sm align-middle mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th style="width:100px;">Chủ đề</th>
+                        <th>Câu hỏi</th>
+                        <th>Câu trả lời</th>
+                        <th style="width:90px;" class="text-center">Embedding</th>
+                        <th style="width:110px;" class="text-center">Ngày index</th>
+                        <th style="width:80px;"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var d in Model)
+                    {
+                        <tr>
+                            <td><span class="badge bg-secondary">@(d.ChuDe ?? "-")</span></td>
+                            <td class="small">@d.CauHoi</td>
+                            <td class="small text-muted" style="max-width:300px;">
+                                <div class="text-truncate" style="max-width:280px;" title="@d.TraLoi">@d.TraLoi</div>
+                            </td>
+                            <td class="text-center">
+                                @if (d.Embedding != null)
+                                {
+                                    <i class="fas fa-check-circle text-success" title="Có embedding"></i>
+                                }
+                                else
+                                {
+                                    <i class="fas fa-times-circle text-danger" title="Chưa có embedding"></i>
+                                }
+                            </td>
+                            <td class="text-center small text-muted">@d.NgayIndex.ToString("dd/MM HH:mm")</td>
+                            <td class="text-end">
+                                <button class="btn btn-outline-primary btn-sm btn-sua"
+                                        data-id="@d.MaDoan"
+                                        data-chude="@(d.ChuDe ?? "")"
+                                        data-cauhoi="@d.CauHoi"
+                                        data-traloi="@d.TraLoi">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <form asp-action="Xoa" asp-route-maDoan="@d.MaDoan" method="post" class="d-inline"
+                                      data-confirm="Xóa FAQ này?">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-outline-danger btn-sm">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- Modal Thêm mới -->
+<div class="modal fade" id="modalThem" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header"><h5 class="modal-title">Thêm FAQ mới</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+            <form asp-action="TaoMoi" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Chủ đề</label>
+                        <input name="chuDe" class="form-control" placeholder="GioNhanPhong, WiFi, HuyDon..." />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Câu hỏi *</label>
+                        <input name="cauHoi" class="form-control" required placeholder="Giờ nhận phòng là mấy giờ?" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Câu trả lời *</label>
+                        <textarea name="traLoi" class="form-control" rows="4" required placeholder="Câu trả lời đầy đủ..."></textarea>
+                    </div>
+                    <div class="text-muted small"><i class="fas fa-info-circle me-1"></i>Embedding sẽ được tạo ngay nếu AI provider đang sẵn sàng.</div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary">Lưu & tạo embedding</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Sửa -->
+<div class="modal fade" id="modalSua" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header"><h5 class="modal-title">Sửa FAQ</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+            <form asp-action="CapNhat" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="maDoan" id="suaMaDoan" />
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Chủ đề</label>
+                        <input name="chuDe" id="suaChuDe" class="form-control" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Câu hỏi *</label>
+                        <input name="cauHoi" id="suaCauHoi" class="form-control" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Câu trả lời *</label>
+                        <textarea name="traLoi" id="suaTraLoi" class="form-control" rows="4" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary">Lưu & cập nhật embedding</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Import -->
+<div class="modal fade" id="modalImport" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header"><h5 class="modal-title">Import CSV</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+            <div class="modal-body">
+                <p class="text-muted small">File CSV cần có header: <code>ChuDe,CauHoi,TraLoi</code> (đúng thứ tự). Sau khi import nhấn <b>Re-index</b> để tạo embedding.</p>
+                <form asp-action="ImportCsv" method="post" enctype="multipart/form-data">
+                    @Html.AntiForgeryToken()
+                    <div class="mb-3">
+                        <input type="file" name="file" class="form-control" accept=".csv" required />
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Import file CSV</button>
+                </form>
+                <hr />
+                <form asp-action="ImportMau" method="post">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-outline-success w-100">
+                        <i class="fas fa-seedling me-1"></i>Import file mẫu (faq_template.csv)
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $('#tbl').DataTable({ language: { url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/vi.json' }, pageLength: 25 });
+
+        document.querySelectorAll('[data-confirm]').forEach(f => {
+            f.addEventListener('submit', e => {
+                e.preventDefault();
+                Swal.fire({ title: 'Xác nhận', text: f.dataset.confirm, icon: 'warning',
+                    showCancelButton: true, confirmButtonText: 'Xóa', cancelButtonText: 'Hủy',
+                    confirmButtonColor: '#dc3545'
+                }).then(r => { if (r.isConfirmed) f.submit(); });
+            });
+        });
+
+        document.querySelectorAll('.btn-sua').forEach(btn => {
+            btn.addEventListener('click', function () {
+                document.getElementById('suaMaDoan').value = this.dataset.id;
+                document.getElementById('suaChuDe').value  = this.dataset.chude;
+                document.getElementById('suaCauHoi').value = this.dataset.cauhoi;
+                document.getElementById('suaTraLoi').value = this.dataset.traloi;
+                new bootstrap.Modal(document.getElementById('modalSua')).show();
+            });
+        });
+
+        // ── Re-index progress polling ─────────────────────────────────────────
+        var pollTimer = null;
+
+        document.getElementById('btnReIndex').addEventListener('click', function (e) {
+            e.preventDefault();
+            var total = @ViewBag.TongDong;
+            Swal.fire({
+                title: 'Re-index toàn bộ?',
+                text: 'Re-index ' + total + ' dòng. AI provider cần sẵn sàng, có thể mất vài phút.',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Bắt đầu',
+                cancelButtonText: 'Hủy',
+                confirmButtonColor: '#f59e0b'
+            }).then(r => {
+                if (r.isConfirmed) {
+                    setTimeout(startPolling, 1500);
+                    document.getElementById('formReIndex').submit();
+                }
+            });
+        });
+
+        function startPolling() {
+            document.getElementById('reindexProgress').style.display = '';
+            document.getElementById('btnReIndex').disabled = true;
+            pollTimer = setInterval(pollProgress, 2000);
+            pollProgress();
+        }
+
+        function pollProgress() {
+            fetch('@Url.Action("IndexProgress", "Chatbot", new { area = "Admin" })')
+                .then(r => r.json())
+                .then(data => {
+                    if (data.total > 0) {
+                        var pct = data.percent;
+                        document.getElementById('progressBar').style.width = pct + '%';
+                        document.getElementById('progressBar').textContent  = pct + '%';
+                        document.getElementById('progressText').textContent = data.done + ' / ' + data.total + (data.failed > 0 ? '' : '');
+                        document.getElementById('progressFail').textContent = data.failed > 0 ? data.failed + ' dòng lỗi' : '';
+                    }
+                    if (!data.isRunning && pollTimer) {
+                        clearInterval(pollTimer);
+                        pollTimer = null;
+                        // Hiển thị kết quả rồi reload
+                        var msg = data.lastMessage || 'Re-index hoàn tất.';
+                        document.getElementById('reindexProgress').innerHTML =
+                            '<div class="card-body py-2 text-success fw-semibold"><i class="fas fa-check-circle me-2"></i>' + msg + ' Đang tải lại...</div>';
+                        setTimeout(() => location.reload(), 1500);
+                    }
+                })
+                .catch(() => {});
+        }
+
+        // Kiểm tra ngay khi load trang - nếu đang chạy thì tự poll
+        (function checkOnLoad() {
+            fetch('@Url.Action("IndexProgress", "Chatbot", new { area = "Admin" })')
+                .then(r => r.json())
+                .then(data => { if (data.isRunning) startPolling(); })
+                .catch(() => {});
+        })();
+
+        // ── AI provider status badge ──────────────────────────────────────────
+        function checkAiStatus() {
+            fetch('@Url.Action("AiStatus", "Chatbot", new { area = "Admin" })')
+                .then(r => r.json())
+                .then(data => {
+                    var badge = document.getElementById('aiBadge');
+                    var label = data.provider || 'AI';
+                    if (data.ok) {
+                        badge.className = 'ms-2 badge bg-success';
+                        badge.innerHTML = '<i class="fas fa-check-circle me-1"></i>' + label + ' · ' + data.model + ' · ' + data.dims + 'd';
+                    } else {
+                        badge.className = 'ms-2 badge bg-danger';
+                        badge.innerHTML = '<i class="fas fa-times-circle me-1"></i>' + label + ' offline';
+                    }
+                })
+                .catch(() => {
+                    var badge = document.getElementById('aiBadge');
+                    badge.className = 'ms-2 badge bg-danger';
+                    badge.innerHTML = '<i class="fas fa-times-circle me-1"></i>AI provider offline';
+                });
+        }
+        checkAiStatus();
+        setInterval(checkAiStatus, 15000);
+    </script>
+}

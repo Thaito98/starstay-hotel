@@ -1,0 +1,66 @@
+@{
+    ViewData["Title"] = "Lập đơn giao việc";
+    var phong = ViewBag.Phong as DatPhongKhachSan.Models.Entities.Phong;
+}
+
+<div class="container py-4" style="max-width:600px;">
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-action="Index">Buồng phòng</a></li>
+            <li class="breadcrumb-item active">Lập đơn giao việc</li>
+        </ol>
+    </nav>
+
+    <h2 class="fw-bold mb-1">
+        <i class="fas fa-clipboard-list me-2 text-warning"></i>Lập đơn giao việc
+    </h2>
+    @if (phong != null)
+    {
+        <div class="alert alert-warning py-2 mb-4">
+            <i class="fas fa-door-open me-2"></i>
+            <b>Phòng @phong.SoPhong</b> - @phong.MaLoaiPhongNavigation?.TenLoaiPhong
+            (Tầng @phong.Tang) · Trạng thái: <b>Đang dọn dẹp</b>
+        </div>
+    }
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body">
+            <form asp-action="GiaoViec" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="maPhong" value="@phong?.MaPhong" />
+
+                <div class="mb-3">
+                    <label for="noiDung" class="form-label fw-semibold">
+                        Nội dung công việc <span class="text-danger">*</span>
+                    </label>
+                    <textarea name="noiDung" id="noiDung" class="form-control" rows="5"
+                              placeholder="Ghi rõ: ai làm + việc gì cần làm&#10;VD: Chị Lan dọn phòng, thay ga giường + bổ sung dầu gội&#10;VD: Gọi kỹ thuật Anh Minh kiểm tra điều hòa, có tiếng ồn lạ."
+                              required></textarea>
+                    <div class="text-muted small mt-1">
+                        <i class="fas fa-info-circle me-1"></i>
+                        Lao công không dùng web - ghi tên họ trực tiếp vào đây.
+                    </div>
+                    @{
+                        var err = ViewData.ModelState["noiDung"]?.Errors.FirstOrDefault()?.ErrorMessage;
+                    }
+                    @if (err != null) { <div class="text-danger small">@err</div> }
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-warning fw-semibold">
+                        <i class="fas fa-save me-1"></i>Lập đơn
+                    </button>
+                    <a asp-action="Index" class="btn btn-outline-secondary">Hủy</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card border-0 bg-light mt-3">
+        <div class="card-body small text-muted">
+            <b>Sau khi lập đơn:</b> Quay lại trang Buồng phòng, nhập ghi chú nghiệm thu
+            và bấm <b>Nghiệm thu => Trống</b> khi phòng đã sẵn sàng.
+            Phòng sẽ tự động về trạng thái <b>Trống</b> và khách có thể đặt lại.
+        </div>
+    </div>
+</div>

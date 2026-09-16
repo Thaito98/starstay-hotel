@@ -1,0 +1,135 @@
+@model List<DatPhongKhachSan.Models.Entities.TienNghi>
+@{
+    ViewData["Title"] = "Quản lý tiện nghi";
+}
+<div class="container-fluid py-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+        <h2 class="fw-bold mb-0"><i class="fas fa-concierge-bell me-2 text-primary"></i>Tiện nghi</h2>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalThem">
+            <i class="fas fa-plus me-1"></i>Thêm tiện nghi
+        </button>
+    </div>
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+
+            <!-- ── Mobile cards ──────────────────────────────────── -->
+            <div class="d-md-none p-2 d-flex flex-column gap-2">
+                @foreach (var t in Model)
+                {
+                    <div class="card border rounded-3 shadow-sm">
+                        <div class="card-body p-3">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="rounded-3 d-flex align-items-center justify-content-center text-white"
+                                     style="width:44px;height:44px;flex-shrink:0;font-size:1.2rem;background:linear-gradient(135deg,#f59e0b,#d97706);">
+                                    <i class="fas @(t.BieuTuong ?? "fa-check")"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div class="fw-semibold">@t.TenTienNghi</div>
+                                    @if (!string.IsNullOrEmpty(t.MoTa))
+                                    {
+                                        <div class="text-muted small">@t.MoTa</div>
+                                    }
+                                    <code class="small text-secondary">@t.BieuTuong</code>
+                                </div>
+                                <div class="d-flex flex-column gap-1" style="flex-shrink:0;">
+                                    <button class="btn btn-outline-primary btn-sm"
+                                            data-bs-toggle="modal" data-bs-target="#modalSua_@t.MaTienNghi">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <form asp-action="Delete" asp-route-id="@t.MaTienNghi" method="post"
+                                          data-confirm="Xóa tiện nghi '@t.TenTienNghi'?">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn btn-outline-danger btn-sm">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+                @if (!Model.Any()) { <div class="text-center text-muted py-4 small">Chưa có tiện nghi nào.</div> }
+            </div>
+
+            <!-- ── Desktop table ──────────────────────────────────── -->
+            <div class="table-responsive d-none d-md-block">
+            <table id="tbl" class="table table-hover align-middle mb-0">
+                <thead class="table-dark"><tr><th>Biểu tượng</th><th>Tên tiện nghi</th><th>Mô tả</th><th></th></tr></thead>
+                <tbody>
+                    @foreach (var t in Model)
+                    {
+                        <tr>
+                            <td><i class="fas @(t.BieuTuong ?? "fa-check") fa-lg text-primary"></i> <code class="ms-1 small">@t.BieuTuong</code></td>
+                            <td class="fw-semibold">@t.TenTienNghi</td>
+                            <td class="text-muted small">@t.MoTa</td>
+                            <td class="text-end">
+                                <button class="btn btn-outline-primary btn-sm me-1"
+                                        data-bs-toggle="modal" data-bs-target="#modalSua_@t.MaTienNghi">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <form asp-action="Delete" asp-route-id="@t.MaTienNghi" method="post" class="d-inline" data-confirm="Xóa tiện nghi '@t.TenTienNghi'?">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-outline-danger btn-sm"><i class="fas fa-trash"></i></button>
+                                </form>
+                            </td>
+                        </tr>
+
+                        <!-- Modal sửa -->
+                        <div class="modal fade" id="modalSua_@t.MaTienNghi" tabindex="-1">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header"><h5 class="modal-title">Sửa tiện nghi</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                                    <form asp-action="Edit" method="post">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="maTienNghi" value="@t.MaTienNghi" />
+                                        <div class="modal-body">
+                                            <div class="mb-3"><label class="form-label fw-semibold">Tên tiện nghi *</label><input name="tenTienNghi" class="form-control" value="@t.TenTienNghi" required /></div>
+                                            <div class="mb-3"><label class="form-label fw-semibold">Biểu tượng FontAwesome</label><input name="bieuTuong" class="form-control" value="@t.BieuTuong" placeholder="fa-wifi" /></div>
+                                            <div class="mb-3"><label class="form-label fw-semibold">Mô tả</label><input name="moTa" class="form-control" value="@t.MoTa" /></div>
+                                        </div>
+                                        <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button><button type="submit" class="btn btn-primary">Lưu</button></div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </tbody>
+            </table>
+            </div><!-- end desktop table -->
+
+        </div>
+    </div>
+</div>
+
+<!-- Modal thêm -->
+<div class="modal fade" id="modalThem" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header"><h5 class="modal-title">Thêm tiện nghi</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+            <form asp-action="Create" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-body">
+                    <div class="mb-3"><label class="form-label fw-semibold">Tên tiện nghi *</label><input name="tenTienNghi" class="form-control" required /></div>
+                    <div class="mb-3"><label class="form-label fw-semibold">Biểu tượng FontAwesome</label><input name="bieuTuong" class="form-control" placeholder="fa-wifi, fa-tv..." /></div>
+                    <div class="mb-3"><label class="form-label fw-semibold">Mô tả</label><input name="moTa" class="form-control" /></div>
+                    <div class="text-muted small"><a href="https://fontawesome.com/icons" target="_blank">Xem danh sách icon FA =></a></div>
+                </div>
+                <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button><button type="submit" class="btn btn-primary">Thêm</button></div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $('#tbl').DataTable({ language: { url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/vi.json' } });
+        document.querySelectorAll('[data-confirm]').forEach(f => {
+            f.addEventListener('submit', e => {
+                e.preventDefault();
+                Swal.fire({ title:'Xác nhận', text:f.dataset.confirm, icon:'warning', showCancelButton:true,
+                    confirmButtonText:'Xóa', cancelButtonText:'Hủy', confirmButtonColor:'#dc3545'
+                }).then(r => { if(r.isConfirmed) f.submit(); });
+            });
+        });
+    </script>
+}

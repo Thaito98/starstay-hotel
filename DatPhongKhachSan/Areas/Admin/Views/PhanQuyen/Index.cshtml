@@ -1,0 +1,115 @@
+@model List<string>?
+@using DatPhongKhachSan.Constants
+@{
+    ViewData["Title"] = "Gán quyền nhân viên";
+    var danhSachNV = ViewBag.DanhSachNV as List<DatPhongKhachSan.Models.Entities.NguoiDung> ?? new();
+    var userId = ViewBag.UserId as string;
+}
+
+<div class="container py-4" style="max-width:860px;">
+    <h2 class="fw-bold mb-4">
+        <i class="fas fa-shield-alt me-2 text-primary"></i>Gán quyền chức năng
+    </h2>
+
+    <div class="row g-4">
+        <!-- Danh sách nhân viên -->
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-light fw-semibold">Chọn nhân viên</div>
+                <div class="list-group list-group-flush">
+                    @foreach (var nd in danhSachNV)
+                    {
+                        var isSelected = nd.UserId == userId;
+                        <a asp-action="Index" asp-route-userId="@nd.UserId"
+                           class="list-group-item list-group-item-action @(isSelected ? "active" : "")">
+                            <div class="fw-semibold">@nd.HoTen</div>
+                            <div class="small @(isSelected ? "text-white-50" : "text-muted")">
+                                @nd.Email
+                                <span class="badge bg-primary ms-1">NhanVien</span>
+                            </div>
+                        </a>
+                    }
+                    @if (!danhSachNV.Any())
+                    {
+                        <div class="list-group-item text-muted small fst-italic">Chưa có nhân viên nào.</div>
+                    }
+                </div>
+                <div class="card-footer bg-light border-0">
+                    <small class="text-muted">
+                        <i class="fas fa-lock me-1 text-danger"></i>
+                        Quản trị viên bị khoá - không thể sửa quyền.
+                    </small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Danh sách quyền -->
+        <div class="col-md-8">
+            @if (string.IsNullOrEmpty(userId))
+            {
+                <div class="alert alert-info">
+                    <i class="fas fa-arrow-left me-2"></i>Chọn nhân viên bên trái để gán quyền.
+                </div>
+            }
+            else
+            {
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-light fw-semibold">
+                        <i class="fas fa-user me-1 text-primary"></i>
+                        @ViewBag.UserHoTen
+                        <span class="text-muted small fw-normal ms-1">(@ViewBag.UserEmail)</span>
+                    </div>
+                    <div class="card-body">
+                        <form asp-action="LuuQuyen" method="post">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="userId" value="@userId" />
+
+                            <p class="text-muted small mb-3">
+                                Tick chức năng => nhân viên đó được phép thực hiện.<br />
+                                Bỏ tick => mất quyền ngay sau khi lưu.
+                            </p>
+
+                            @{
+                                var groups = new[]
+                                {
+                                    ("Khu lễ tân", new[] { ChucNang.TraCuuDon, ChucNang.CheckInOut, ChucNang.DatWalkIn, ChucNang.ChuyenGiaHan }),
+                                    ("Buồng phòng", new[] { ChucNang.BuongPhong }),
+                                    ("Nhân sự", new[] { ChucNang.XepCa, ChucNang.ChamCong }),
+                                    ("Quản trị", new[] { ChucNang.QuanLyDanhMuc, ChucNang.QuanLyDon, ChucNang.QuanLyNguoiDung, ChucNang.QuanLyChatbot, ChucNang.XemBaoCao, ChucNang.GanQuyen }),
+                                };
+                            }
+
+                            @foreach (var (groupName, claims) in groups)
+                            {
+                                <div class="mb-3">
+                                    <div class="text-muted small fw-semibold text-uppercase mb-1">@groupName</div>
+                                    <div class="d-flex flex-wrap gap-2">
+                                        @foreach (var cn in claims)
+                                        {
+                                            var isChecked = Model?.Contains(cn) ?? false;
+                                            var label = ChucNang.NhanLabels.GetValueOrDefault(cn, cn);
+                                            <div class="form-check border rounded px-3 py-2 @(isChecked ? "bg-primary bg-opacity-10 border-primary" : "")">
+                                                <input type="checkbox" name="chucNangChon" value="@cn"
+                                                       class="form-check-input" @(isChecked ? "checked" : "") />
+                                                <label class="form-check-label small fw-semibold">
+                                                    @label
+                                                </label>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            }
+
+                            <div class="d-flex gap-2 mt-3">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save me-1"></i>Lưu quyền
+                                </button>
+                                <a asp-action="Index" class="btn btn-outline-secondary">Hủy</a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>

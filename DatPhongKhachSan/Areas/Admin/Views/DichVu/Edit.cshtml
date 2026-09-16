@@ -1,0 +1,22 @@
+@model DatPhongKhachSan.Models.Entities.DichVu
+@{ ViewData["Title"] = "Sửa dịch vụ"; }
+<div class="container py-4" style="max-width:580px;">
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb"><li class="breadcrumb-item"><a asp-action="Index">Dịch vụ</a></li><li class="breadcrumb-item active">Sửa</li></ol>
+    </nav>
+    <h2 class="fw-bold mb-4">Sửa dịch vụ</h2>
+    <div class="card shadow-sm border-0">
+        <div class="card-body">
+            <form asp-action="Edit" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="MaDichVu" />
+                <partial name="_DichVuForm" model="Model" />
+                <div class="d-flex gap-2 mt-3">
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i>Lưu</button>
+                    <a asp-action="Index" class="btn btn-outline-secondary">Hủy</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }
